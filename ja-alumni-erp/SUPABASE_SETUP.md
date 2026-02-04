@@ -1,0 +1,13 @@
+
+NEXT_PUBLIC_SUPABASE_URL=https://ewimbmnlbtoqeycnvqhx.supabase.co
+
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY=sb_publishable_sysZ5sGtA9HA7eQ5Gax4KQ_sxHby2Ry
+
+Project link :
+https://ewimbmnlbtoqeycnvqhx.supabase.co
+
+Pub Key :
+sb_publishable_sysZ5sGtA9HA7eQ5Gax4KQ_sxHby2Ry
+
+Sec Key :
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV3aW1ibW5sYnRvcWV5Y252cWh4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAyMDAzMzYsImV4cCI6MjA4NTc3NjMzNn0.1nEmrdhzunbvB5qmKodWsF1hVntdxMr3LdamY-Ucp5w
