@@ -15,13 +15,13 @@ export default function AuthPage() {
             alignItems: 'center',
             justifyContent: 'center',
             background: '#f0fdf4', // Very light green background
-            padding: '2rem'
+            padding: '1rem'
         }}>
 
             {/* Main Card Container */}
-            <div style={{
+            <div className="auth-card" style={{
                 display: 'flex',
-                maxWidth: '1000px',
+                maxWidth: '900px', // Reduced from 1000px
                 width: '100%',
                 background: 'white',
                 borderRadius: '1.5rem',
@@ -30,7 +30,7 @@ export default function AuthPage() {
             }}>
 
                 {/* Left Panel - Marketing (Visible on Desktop/Tablet) */}
-                <div style={{
+                <div className="side-panel" style={{
                     flex: 1,
                     background: 'linear-gradient(135deg, #4ade80 0%, #22c55e 100%)', // Vibrant green gradient
                     padding: '3rem',
@@ -38,7 +38,7 @@ export default function AuthPage() {
                     display: 'flex',
                     flexDirection: 'column',
                     justifyContent: 'center'
-                }} className="hidden-mobile">
+                }}>
 
                     <h2 style={{ fontSize: '2rem', marginBottom: '2rem', fontWeight: 800 }}>
                         JA Alumni
@@ -71,7 +71,7 @@ export default function AuthPage() {
                 </div>
 
                 {/* Right Panel - Form */}
-                <div style={{
+                <div className="form-panel" style={{
                     flex: 1,
                     padding: '3rem',
                     display: 'flex',
@@ -82,7 +82,7 @@ export default function AuthPage() {
                     <div style={{ width: '100%' }}>
                         {/* Mobile Header (only visible on small screens when we hide the side panel) */}
                         <div className="show-mobile-only" style={{ marginBottom: '2rem', textAlign: 'center', display: 'none' }}>
-                            <h2 style={{ color: 'var(--color-primary-dark)', fontWeight: 800 }}>JA Alumni</h2>
+                            <h2 style={{ color: 'var(--color-primary-dark)', fontWeight: 800, fontSize: '2rem' }}>JA Alumni</h2>
                         </div>
 
                         {isLogin ? (
@@ -98,8 +98,19 @@ export default function AuthPage() {
             {/* Simple CSS to handle responsiveness */}
             <style jsx global>{`
                 @media (max-width: 768px) {
-                    .hidden-mobile {
+                    .auth-card {
+                        flex-direction: column !important;
+                        max-width: 100% !important;
+                        border-radius: 0 !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                    }
+                    .side-panel {
                         display: none !important;
+                    }
+                    .form-panel {
+                        padding: 1rem !important;
+                        background: transparent !important;
                     }
                     .show-mobile-only {
                         display: block !important;
