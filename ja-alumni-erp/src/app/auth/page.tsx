@@ -1,94 +1,111 @@
 "use client";
 
 import { useState } from 'react';
-import { supabase } from '@/lib/supabase';
-import { useRouter } from 'next/navigation';
+import LoginForm from './LoginForm';
+import SignupForm from './SignupForm';
+import { CheckCircle2, ArrowRight } from 'lucide-react';
 
 export default function AuthPage() {
     const [isLogin, setIsLogin] = useState(true);
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const router = useRouter();
-
-    const handleAuth = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setLoading(true);
-        setError(null);
-
-        try {
-            if (isLogin) {
-                const { error } = await supabase.auth.signInWithPassword({
-                    email,
-                    password,
-                });
-                if (error) throw error;
-                router.push('/dashboard');
-            } else {
-                const { error } = await supabase.auth.signUp({
-                    email,
-                    password,
-                });
-                if (error) throw error;
-                alert('Inscription réussie ! Veuillez vérifier vos emails.');
-            }
-        } catch (err: any) {
-            setError(err.message);
-        } finally {
-            setLoading(false);
-        }
-    };
 
     return (
-        <div style={{ display: 'flex', minHeight: '100vh', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'var(--color-primary-light)' }}>
-            <div className="card" style={{ width: '100%', maxWidth: '400px' }}>
-                <h2 style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-                    {isLogin ? 'Connexion' : 'Inscription'}
-                </h2>
+        <div style={{
+            minHeight: '100vh',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: '#f0fdf4', // Very light green background
+            padding: '2rem'
+        }}>
 
-                <form onSubmit={handleAuth} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                    <div>
-                        <label className="label">Email</label>
-                        <input
-                            type="email"
-                            required
-                            className="input"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                        />
+            {/* Main Card Container */}
+            <div style={{
+                display: 'flex',
+                maxWidth: '1000px',
+                width: '100%',
+                background: 'white',
+                borderRadius: '1.5rem',
+                overflow: 'hidden',
+                boxShadow: '0 20px 40px rgba(0,0,0,0.08)'
+            }}>
+
+                {/* Left Panel - Marketing (Visible on Desktop/Tablet) */}
+                <div style={{
+                    flex: 1,
+                    background: 'linear-gradient(135deg, #4ade80 0%, #22c55e 100%)', // Vibrant green gradient
+                    padding: '3rem',
+                    color: 'white',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center'
+                }} className="hidden-mobile">
+
+                    <h2 style={{ fontSize: '2rem', marginBottom: '2rem', fontWeight: 800 }}>
+                        JA Alumni
+                    </h2>
+
+                    <h3 style={{ fontSize: '1.5rem', marginBottom: '1.5rem', fontWeight: 600 }}>
+                        Avec nous, tu :
+                    </h3>
+
+                    <ul style={{ listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                        {[
+                            "Continueras à développer tes compétences personnelles et professionnelles",
+                            "Bénéficieras d’une aide professionnelle pour tes recherches (stage, alternance, emploi)",
+                            "Pourras témoigner de ton expérience pour inspirer d’autres jeunes",
+                            "Participeras à des évènements et rencontres exclusifs",
+                            "Feras partie d’une communauté qui s’étend au-delà de nos frontières"
+                        ].map((item, index) => (
+                            <li key={index} style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem', fontSize: '1.05rem', lineHeight: '1.5' }}>
+                                <CheckCircle2 size={24} style={{ minWidth: '24px', marginTop: '2px', opacity: 0.9 }} />
+                                <span>{item}</span>
+                            </li>
+                        ))}
+                    </ul>
+
+                    <div style={{ marginTop: '3rem', paddingTop: '2rem', borderTop: '1px solid rgba(255,255,255,0.2)' }}>
+                        <p style={{ fontSize: '1.25rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            Alors, tu rejoins l'aventure ? <ArrowRight />
+                        </p>
                     </div>
-                    <div>
-                        <label className="label">Mot de passe</label>
-                        <input
-                            type="password"
-                            required
-                            className="input"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                        />
+                </div>
+
+                {/* Right Panel - Form */}
+                <div style={{
+                    flex: 1,
+                    padding: '3rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: 'white'
+                }}>
+                    <div style={{ width: '100%' }}>
+                        {/* Mobile Header (only visible on small screens when we hide the side panel) */}
+                        <div className="show-mobile-only" style={{ marginBottom: '2rem', textAlign: 'center', display: 'none' }}>
+                            <h2 style={{ color: 'var(--color-primary-dark)', fontWeight: 800 }}>JA Alumni</h2>
+                        </div>
+
+                        {isLogin ? (
+                            <LoginForm onSwitch={() => setIsLogin(false)} />
+                        ) : (
+                            <SignupForm onSwitch={() => setIsLogin(true)} />
+                        )}
                     </div>
+                </div>
 
-                    {error && <div style={{ color: 'red', fontSize: '0.9rem' }}>{error}</div>}
-
-                    <button type="submit" className="btn btn-primary" disabled={loading}>
-                        {loading ? 'Chargement...' : (isLogin ? 'Se connecter' : "S'inscrire")}
-                    </button>
-                </form>
-
-                <p style={{ textAlign: 'center', marginTop: '1rem', fontSize: '0.9rem' }}>
-                    {isLogin ? "Pas encore de compte ?" : "Déjà un compte ?"}
-                    <span
-                        onClick={() => setIsLogin(!isLogin)}
-                        style={{ color: 'var(--color-primary-dark)', cursor: 'pointer', marginLeft: '0.5rem', fontWeight: 600 }}
-                    >
-                        {isLogin ? "S'inscrire" : 'Se connecter'}
-                    </span>
-                </p>
             </div>
-            <div style={{ marginTop: '2rem' }}>
-                <a href="/" style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>← Retour à l'accueil</a>
-            </div>
+
+            {/* Simple CSS to handle responsiveness */}
+            <style jsx global>{`
+                @media (max-width: 768px) {
+                    .hidden-mobile {
+                        display: none !important;
+                    }
+                    .show-mobile-only {
+                        display: block !important;
+                    }
+                }
+            `}</style>
         </div>
     );
 }
