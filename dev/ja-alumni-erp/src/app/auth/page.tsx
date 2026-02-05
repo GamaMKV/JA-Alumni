@@ -33,22 +33,22 @@ export default function AuthPage() {
                 <div className="side-panel" style={{
                     flex: 1,
                     background: 'linear-gradient(135deg, #4ade80 0%, #22c55e 100%)', // Vibrant green gradient
-                    padding: '3rem',
+                    padding: '2rem',
                     color: 'white',
                     display: 'flex',
                     flexDirection: 'column',
                     justifyContent: 'center'
                 }}>
 
-                    <h2 style={{ fontSize: '2rem', marginBottom: '2rem', fontWeight: 800 }}>
+                    <h2 style={{ fontSize: '1.75rem', marginBottom: '1rem', fontWeight: 800 }}>
                         JA Alumni
                     </h2>
 
-                    <h3 style={{ fontSize: '1.5rem', marginBottom: '1.5rem', fontWeight: 600 }}>
+                    <h3 style={{ fontSize: '1.25rem', marginBottom: '1rem', fontWeight: 600 }}>
                         Avec nous, tu :
                     </h3>
 
-                    <ul style={{ listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                    <ul style={{ listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
                         {[
                             "Continueras à développer tes compétences personnelles et professionnelles",
                             "Bénéficieras d’une aide professionnelle pour tes recherches (stage, alternance, emploi)",
@@ -56,16 +56,16 @@ export default function AuthPage() {
                             "Participeras à des évènements et rencontres exclusifs",
                             "Feras partie d’une communauté qui s’étend au-delà de nos frontières"
                         ].map((item, index) => (
-                            <li key={index} style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem', fontSize: '1.05rem', lineHeight: '1.5' }}>
-                                <CheckCircle2 size={24} style={{ minWidth: '24px', marginTop: '2px', opacity: 0.9 }} />
+                            <li key={index} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', fontSize: '0.95rem', lineHeight: '1.3' }}>
+                                <CheckCircle2 size={20} style={{ minWidth: '20px', marginTop: '2px', opacity: 0.9 }} />
                                 <span>{item}</span>
                             </li>
                         ))}
                     </ul>
 
-                    <div style={{ marginTop: '3rem', paddingTop: '2rem', borderTop: '1px solid rgba(255,255,255,0.2)' }}>
+                    <div style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.2)' }}>
                         <p style={{ fontSize: '1.25rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            Alors, tu rejoins l'aventure ? <ArrowRight />
+                            Alors, tu rejoins l&apos;aventure ? <ArrowRight />
                         </p>
                     </div>
                 </div>
@@ -73,7 +73,7 @@ export default function AuthPage() {
                 {/* Right Panel - Form */}
                 <div className="form-panel" style={{
                     flex: 1,
-                    padding: '3rem',
+                    padding: '2rem',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',

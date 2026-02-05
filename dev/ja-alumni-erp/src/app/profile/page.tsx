@@ -465,7 +465,7 @@ export default function ProfilePage() {
                                             checked={profile.consentement_rgpd || false}
                                             onChange={handleCheckboxChange}
                                         />
-                                        <span>J'accepte que mes données soient traitées dans le cadre de l'association JA Alumni.</span>
+                                        <span>J&apos;accepte que mes données soient traitées dans le cadre de l&apos;association JA Alumni.</span>
                                     </label>
                                 ) : (
                                     <p style={{ fontSize: '0.9rem', color: '#666' }}>

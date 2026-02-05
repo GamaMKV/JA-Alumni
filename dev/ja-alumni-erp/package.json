@@ -18,7 +18,6 @@
     "react": "^18",
     "react-chartjs-2": "^5.2.0",
     "react-dom": "^18",
-    "recharts": "^2.10.4",
     "tailwind-merge": "^2.2.1"
   },
   "devDependencies": {

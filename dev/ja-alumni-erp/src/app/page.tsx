@@ -7,7 +7,7 @@ export default function Home() {
                 Bienvenue sur le portail JA Alumni
             </h1>
             <p style={{ fontSize: '1.25rem', color: 'var(--color-text-muted)', marginBottom: '2rem' }}>
-                La plateforme dédiée à la gestion et l'animation du réseau Alumni JA France.
+                La plateforme dédiée à la gestion et l&apos;animation du réseau Alumni JA France.
             </p>
 
             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
@@ -27,7 +27,7 @@ export default function Home() {
                 </div>
                 <div className="card">
                     <h3>Pour le National</h3>
-                    <p>Supervisez l'ensemble du réseau, analysez la croissance et l'impact.</p>
+                    <p>Supervisez l&apos;ensemble du réseau, analysez la croissance et l&apos;impact.</p>
                 </div>
             </div>
         </div>

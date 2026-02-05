@@ -1,3 +1,4 @@
+// Event page placeholder
 export default function EventsPage() {
     return (
         <div className="container" style={{ padding: '2rem 0' }}>

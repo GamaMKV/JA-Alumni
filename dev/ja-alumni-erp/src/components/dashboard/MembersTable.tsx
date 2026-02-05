@@ -2,9 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Search, ChevronLeft, ChevronRight, Edit, Trash2, Download } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, Edit, Trash2, Download, Eye } from 'lucide-react';
+import MemberDetailModal from './MemberDetailModal';
 
-export default function MembersTable() {
+interface MembersTableProps {
+    region?: string; // If provided, filter by this region
+}
+
+export default function MembersTable({ region }: MembersTableProps) {
     const [members, setMembers] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -12,20 +17,23 @@ export default function MembersTable() {
     const [totalPages, setTotalPages] = useState(1);
     const LIMIT = 10;
 
-    // Debounce search term to avoid too many requests
+    // Modal State
+    const [selectedMember, setSelectedMember] = useState<any>(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+
     const [debouncedSearch, setDebouncedSearch] = useState(searchTerm);
 
     useEffect(() => {
         const timer = setTimeout(() => {
             setDebouncedSearch(searchTerm);
-            setPage(1); // Reset to page 1 on search
+            setPage(1);
         }, 500);
         return () => clearTimeout(timer);
     }, [searchTerm]);
 
     useEffect(() => {
         fetchMembers();
-    }, [page, debouncedSearch]);
+    }, [page, debouncedSearch, region]);
 
     const fetchMembers = async () => {
         setLoading(true);
@@ -38,6 +46,11 @@ export default function MembersTable() {
                 .select('*', { count: 'exact' })
                 .order('created_at', { ascending: false })
                 .range(start, end);
+
+            // Apply Region Filter
+            if (region) {
+                query = query.eq('region', region);
+            }
 
             if (debouncedSearch) {
                 query = query.or(`nom.ilike.%${debouncedSearch}%,prenom.ilike.%${debouncedSearch}%,email.ilike.%${debouncedSearch}%`);
@@ -58,9 +71,10 @@ export default function MembersTable() {
 
     const handleExport = async () => {
         try {
-            const { data, error } = await supabase
-                .from('profiles')
-                .select('*');
+            let query = supabase.from('profiles').select('*');
+            if (region) query = query.eq('region', region);
+
+            const { data, error } = await query;
 
             if (error) throw error;
             if (!data || data.length === 0) return alert('Aucune donnée à exporter');
@@ -75,7 +89,7 @@ export default function MembersTable() {
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.setAttribute('download', 'membres_ja_alumni.csv');
+            link.setAttribute('download', `membres_ja_alumni_${region || 'all'}.csv`);
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -83,6 +97,11 @@ export default function MembersTable() {
             console.error('Error exporting CSV:', error);
             alert('Erreur lors de l\'export CSV');
         }
+    };
+
+    const handleOpenModal = (member: any) => {
+        setSelectedMember(member);
+        setIsModalOpen(true);
     };
 
     return (
@@ -93,7 +112,7 @@ export default function MembersTable() {
                     <Search size={18} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-muted)' }} />
                     <input
                         type="text"
-                        placeholder="Rechercher un membre..."
+                        placeholder="Rechercher..."
                         className="input"
                         style={{ paddingLeft: '2.5rem' }}
                         value={searchTerm}
@@ -102,7 +121,7 @@ export default function MembersTable() {
                 </div>
                 <button onClick={handleExport} className="btn btn-outline" style={{ gap: '0.5rem' }}>
                     <Download size={18} />
-                    Exporter CSV
+                    Export CSV
                 </button>
             </div>
 
@@ -113,20 +132,16 @@ export default function MembersTable() {
                         <tr style={{ borderBottom: '2px solid var(--color-border)', color: 'var(--color-primary-dark)', textAlign: 'left' }}>
                             <th style={{ padding: '0.75rem' }}>Nom</th>
                             <th style={{ padding: '0.75rem' }}>Email</th>
-                            <th style={{ padding: '0.75rem' }}>Région</th>
+                            {!region && <th style={{ padding: '0.75rem' }}>Région</th>}
                             <th style={{ padding: '0.75rem' }}>Statut</th>
                             <th style={{ padding: '0.75rem' }}>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {loading ? (
-                            <tr>
-                                <td colSpan={5} style={{ padding: '2rem', textAlign: 'center' }}>Chargement...</td>
-                            </tr>
+                            <tr><td colSpan={5} style={{ padding: '2rem', textAlign: 'center' }}>Chargement...</td></tr>
                         ) : members.length === 0 ? (
-                            <tr>
-                                <td colSpan={5} style={{ padding: '2rem', textAlign: 'center' }}>Aucun membre trouvé.</td>
-                            </tr>
+                            <tr><td colSpan={5} style={{ padding: '2rem', textAlign: 'center' }}>Aucun membre trouvé.</td></tr>
                         ) : (
                             members.map((member) => (
                                 <tr key={member.id} style={{ borderBottom: '1px solid var(--color-border)' }}>
@@ -135,7 +150,7 @@ export default function MembersTable() {
                                         <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>{member.situation || 'Situation inconnue'}</div>
                                     </td>
                                     <td style={{ padding: '0.75rem' }}>{member.email}</td>
-                                    <td style={{ padding: '0.75rem' }}>{member.region || '-'}</td>
+                                    {!region && <td style={{ padding: '0.75rem' }}>{member.region || '-'}</td>}
                                     <td style={{ padding: '0.75rem' }}>
                                         <span style={{
                                             padding: '0.25rem 0.5rem',
@@ -149,11 +164,13 @@ export default function MembersTable() {
                                     </td>
                                     <td style={{ padding: '0.75rem' }}>
                                         <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                            <button className="btn btn-outline" style={{ padding: '0.25rem 0.5rem' }} title="Éditer">
-                                                <Edit size={16} />
-                                            </button>
-                                            <button className="btn btn-outline" style={{ padding: '0.25rem 0.5rem', borderColor: 'red', color: 'red' }} title="Supprimer">
-                                                <Trash2 size={16} />
+                                            <button
+                                                className="btn btn-outline"
+                                                style={{ padding: '0.25rem 0.5rem' }}
+                                                onClick={() => handleOpenModal(member)}
+                                                title="Voir détails"
+                                            >
+                                                <Eye size={16} />
                                             </button>
                                         </div>
                                     </td>
@@ -184,6 +201,15 @@ export default function MembersTable() {
                     <ChevronRight size={16} />
                 </button>
             </div>
+
+            <MemberDetailModal
+                member={selectedMember}
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                onUpdate={() => {
+                    fetchMembers(); // Refresh list after edit
+                }}
+            />
         </div>
     );
 }

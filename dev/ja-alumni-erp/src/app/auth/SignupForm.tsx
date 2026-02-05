@@ -154,7 +154,7 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
                 {step === 1 && (
                     <div className="fade-in">
                         <h3 style={{ fontSize: '1.2rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <Calendar size={20} /> Conditions d'éligibilité
+                            <Calendar size={20} /> Conditions d&apos;éligibilité
                         </h3>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
@@ -368,7 +368,7 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
                         disabled={loading}
                         style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem' }}
                     >
-                        {loading ? 'Création...' : <><CheckCircle size={18} /> S'inscrire</>}
+                        {loading ? 'Création...' : <><CheckCircle size={18} /> S&apos;inscrire</>}
                     </button>
                 )}
             </div>

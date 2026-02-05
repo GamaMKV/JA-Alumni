@@ -80,8 +80,8 @@ export default function DebugRolePage() {
             <div style={{ background: '#fffae6', padding: '1rem', border: '1px solid #ddd' }}>
                 <strong>Diagnosis:</strong>
                 <ul>
-                    <li>If <strong>Statut</strong> is 'membre', you did not run the UPDATE SQL command correctly (or forgot to replace the email).</li>
-                    <li>If <strong>Profile is NULL</strong> but Session exists, the Row Level Security (RLS) might be blocking read access, or the profile wasn't created.</li>
+                    <li>If <strong>Statut</strong> is &apos;membre&apos;, you did not run the UPDATE SQL command correctly (or forgot to replace the email).</li>
+                    <li>If <strong>Profile is NULL</strong> but Session exists, the Row Level Security (RLS) might be blocking read access, or the profile wasn&apos;t created.</li>
                     <li>If <strong>Error code is 42P01</strong>, the table is STILL missing (did you run the fix script?).</li>
                 </ul>
             </div>

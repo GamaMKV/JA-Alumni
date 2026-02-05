@@ -86,7 +86,7 @@ export default function LoginForm({ onSwitch }: { onSwitch: () => void }) {
                         textDecoration: 'underline'
                     }}
                 >
-                    Rejoindre l'aventure
+                    Rejoindre l&apos;aventure
                 </button>
             </p>
         </div>
