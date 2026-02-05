@@ -3,38 +3,69 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import MembersTable from './MembersTable';
+import EventList from '../events/EventList';
 
 export default function ModeratorDashboard({ user }: { user: any }) {
     const [profile, setProfile] = useState<any>(null);
-    const [stats, setStats] = useState({ totalContext: 0, newThisMonth: 0 });
+    const [stats, setStats] = useState({ totalContext: 0, newThisMonth: 0, upcomingEvents: 0 });
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchRegionData = async () => {
-            // Get user region
-            const { data: userData } = await supabase.from('profiles').select('region').eq('id', user.id).single();
-            if (userData?.region) {
-                setProfile(userData);
+            try {
+                setLoading(true);
+                // Get user region
+                const { data: userData, error: userError } = await supabase
+                    .from('profiles')
+                    .select('region')
+                    .eq('id', user.id)
+                    .single();
 
-                // Fetch stats parallel
-                const p1 = supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('region', userData.region);
+                if (userError) throw userError;
 
-                const day30ago = new Date();
-                day30ago.setDate(day30ago.getDate() - 30);
-                const p2 = supabase.from('profiles').select('*', { count: 'exact', head: true })
-                    .eq('region', userData.region)
-                    .gte('created_at', day30ago.toISOString());
+                if (userData?.region) {
+                    setProfile(userData);
 
-                const [resTotal, resNew] = await Promise.all([p1, p2]);
-                setStats({
-                    totalContext: resTotal.count || 0,
-                    newThisMonth: resNew.count || 0
-                });
+                    // Fetch stats parallel
+                    const p1 = supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('region', userData.region);
+
+                    const day30ago = new Date();
+                    day30ago.setDate(day30ago.getDate() - 30);
+                    const p2 = supabase.from('profiles').select('*', { count: 'exact', head: true })
+                        .eq('region', userData.region)
+                        .gte('created_at', day30ago.toISOString());
+
+                    // Events count (Upcoming)
+                    const p3 = supabase.from('evenements').select('*', { count: 'exact', head: true })
+                        .or(`region_id.eq.${userData.region},region_id.is.null`)
+                        .gte('date', new Date().toISOString());
+
+                    const [resTotal, resNew, resEvents] = await Promise.all([p1, p2, p3]);
+                    setStats({
+                        totalContext: resTotal.count || 0,
+                        newThisMonth: resNew.count || 0,
+                        upcomingEvents: resEvents.count || 0
+                    });
+                } else {
+                    setError("Aucune région associée à ce profil.");
+                }
+            } catch (err: any) {
+                console.error('Error fetching dashboard data:', err);
+                setError(err.message || 'Erreur lors du chargement');
+            } finally {
+                setLoading(false);
             }
         };
-        fetchRegionData();
+
+        if (user?.id) {
+            fetchRegionData();
+        }
     }, [user]);
 
-    if (!profile) return <div>Chargement du profil...</div>;
+    if (loading) return <div style={{ padding: '2rem', textAlign: 'center' }}>Chargement du tableau de bord...</div>;
+    if (error) return <div style={{ padding: '2rem', textAlign: 'center', color: 'red' }}>Effectuez une action pour résoudre : {error}</div>;
+    if (!profile) return <div style={{ padding: '2rem', textAlign: 'center' }}>Profil introuvable.</div>;
 
     return (
         <div className="container" style={{ padding: '2rem 0' }}>
@@ -57,9 +88,8 @@ export default function ModeratorDashboard({ user }: { user: any }) {
                 <div className="card" style={{ textAlign: 'center' }}>
                     <h3 style={{ fontSize: '1rem', color: '#666' }}>Événements à venir</h3>
                     <div style={{ fontSize: '2.5rem', fontWeight: 700, color: 'orange' }}>
-                        0
+                        {stats.upcomingEvents}
                     </div>
-                    <div style={{ fontSize: '0.8rem', color: '#666' }}>(Bientôt disponible)</div>
                 </div>
             </div>
 
@@ -70,9 +100,8 @@ export default function ModeratorDashboard({ user }: { user: any }) {
             </div>
 
             <div className="card" style={{ marginTop: '2rem' }}>
-                <h3>Gestion des Événements</h3>
-                <p style={{ color: '#666' }}>Le module de gestion des événements sera intégré prochainement.</p>
-                <button className="btn btn-outline" disabled>Créer un événement (Bientôt)</button>
+                <h2 style={{ marginBottom: '1.5rem', borderBottom: '1px solid #eee', paddingBottom: '1rem' }}>Gestion des Événements</h2>
+                <EventList regionFilter={profile.region} adminMode={true} />
             </div>
         </div>
     );

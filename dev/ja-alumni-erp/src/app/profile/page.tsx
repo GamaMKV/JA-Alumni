@@ -104,6 +104,11 @@ export default function ProfilePage() {
                 .eq('id', session.user.id)
                 .single();
 
+            if (error) {
+                console.error('Error fetching profile:', error);
+                setMessage({ type: 'error', text: `Erreur: ${error.message} (${error.code})` }); // Display specific error
+            }
+
             if (data) {
                 setProfile(data);
                 setOriginalProfile(data);
@@ -259,7 +264,12 @@ export default function ProfilePage() {
     const availableDepartements = profile?.region ? REGIONS_DEPARTEMENTS[profile.region] || [] : [];
 
     if (loading) return <div className="container" style={{ padding: '2rem' }}>Chargement...</div>;
-    if (!profile) return <div className="container" style={{ padding: '2rem' }}>Profil introuvable.</div>;
+    if (!profile) return (
+        <div className="container" style={{ padding: '2rem' }}>
+            Profil introuvable.
+            {message && <div style={{ color: 'red', marginTop: '1rem' }}>Détail: {message.text}</div>}
+        </div>
+    );
 
     return (
         <div className="container" style={{ padding: '2rem 0' }}>

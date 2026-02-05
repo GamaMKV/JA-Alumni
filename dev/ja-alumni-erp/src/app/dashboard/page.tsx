@@ -48,7 +48,7 @@ export default function DashboardPage() {
         );
     }
 
-    if (role === 'admin') {
+    if (role === 'admin' || role === 'superadmin') {
         return <AdminDashboard />;
     } else if (role === 'moderateur') {
         return <ModeratorDashboard user={user} />;

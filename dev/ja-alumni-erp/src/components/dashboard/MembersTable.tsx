@@ -31,6 +31,19 @@ export default function MembersTable({ region }: MembersTableProps) {
         return () => clearTimeout(timer);
     }, [searchTerm]);
 
+    const [userRole, setUserRole] = useState<string>('');
+
+    useEffect(() => {
+        const fetchUserRole = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                const { data } = await supabase.from('profiles').select('statut').eq('id', user.id).single();
+                if (data) setUserRole(data.statut);
+            }
+        };
+        fetchUserRole();
+    }, []);
+
     useEffect(() => {
         fetchMembers();
     }, [page, debouncedSearch, region]);
@@ -159,7 +172,9 @@ export default function MembersTable({ region }: MembersTableProps) {
                                             background: member.statut === 'admin' ? 'var(--color-primary)' : 'var(--color-primary-light)',
                                             color: member.statut === 'admin' ? 'white' : 'var(--color-primary-dark)'
                                         }}>
-                                            {member.statut}
+                                            {member.statut === 'membre' ? 'Alumni' :
+                                                member.statut === 'moderateur' ? 'Référent' :
+                                                    member.statut === 'admin' ? 'COPIL' : member.statut}
                                         </span>
                                     </td>
                                     <td style={{ padding: '0.75rem' }}>
@@ -209,6 +224,7 @@ export default function MembersTable({ region }: MembersTableProps) {
                 onUpdate={() => {
                     fetchMembers(); // Refresh list after edit
                 }}
+                currentUserRole={userRole}
             />
         </div>
     );

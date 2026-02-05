@@ -61,8 +61,8 @@ export default function Navbar() {
                     {user ? (
                         <>
                             <Link href="/events" className="btn btn-outline">Événements</Link>
-                            {profile?.statut === 'admin' && (
-                                <Link href="/dashboard" className="btn btn-primary">Dashboard Admin</Link>
+                            {(profile?.statut === 'admin' || profile?.statut === 'superadmin' || profile?.statut === 'moderateur') && (
+                                <Link href="/dashboard" className="btn btn-primary">Dashboard</Link>
                             )}
                             <Link href="/profile" className="btn btn-outline" title="Mon Profil">
                                 <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>

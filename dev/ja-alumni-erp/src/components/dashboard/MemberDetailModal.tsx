@@ -9,9 +9,10 @@ interface MemberDetailModalProps {
     isOpen: boolean;
     onClose: () => void;
     onUpdate: () => void;
+    currentUserRole?: string;
 }
 
-export default function MemberDetailModal({ member, isOpen, onClose, onUpdate }: MemberDetailModalProps) {
+export default function MemberDetailModal({ member, isOpen, onClose, onUpdate, currentUserRole }: MemberDetailModalProps) {
     const [isEditing, setIsEditing] = useState(false);
     const [formData, setFormData] = useState(member);
     const [saving, setSaving] = useState(false);
@@ -74,7 +75,9 @@ export default function MemberDetailModal({ member, isOpen, onClose, onUpdate }:
                             fontSize: '0.8rem', padding: '0.2rem 0.5rem', borderRadius: '1rem',
                             background: 'var(--color-primary-light)', color: 'var(--color-primary-dark)'
                         }}>
-                            {member.statut}
+                            {member.statut === 'membre' ? 'Alumni' :
+                                member.statut === 'moderateur' ? 'Référent' :
+                                    member.statut === 'admin' ? 'COPIL' : member.statut}
                         </span>
                     )}
                 </h2>
@@ -153,6 +156,7 @@ export default function MemberDetailModal({ member, isOpen, onClose, onUpdate }:
                     </div>
 
                     {/* Mini Entreprise */}
+                    {/* Mini Entreprise */}
                     <div style={{ padding: '1rem', background: '#f8f9fa', borderRadius: '0.5rem' }}>
                         <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem' }}>Mini-Entreprise</h4>
                         <div style={{ fontSize: '0.9rem' }}>
@@ -160,6 +164,34 @@ export default function MemberDetailModal({ member, isOpen, onClose, onUpdate }:
                             Nom: {member.mini_entreprise_nom || '-'}
                         </div>
                     </div>
+
+                    {/* Role Management (COPIL+ Only) */}
+                    {currentUserRole === 'superadmin' && (
+                        <div style={{ padding: '1rem', border: '1px solid var(--color-primary-light)', borderRadius: '0.5rem', marginTop: '1rem' }}>
+                            <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', color: 'var(--color-primary-dark)' }}>Gestion du Rôle (COPIL+)</h4>
+                            {isEditing ? (
+                                <select
+                                    className="input"
+                                    name="statut"
+                                    value={formData.statut}
+                                    onChange={handleChange}
+                                >
+                                    <option value="membre">Alumni (Membre)</option>
+                                    <option value="moderateur">Référent (Modérateur)</option>
+                                    <option value="admin">COPIL (Admin)</option>
+                                    <option value="superadmin">COPIL+ (SuperAdmin)</option>
+                                </select>
+                            ) : (
+                                <div style={{ fontSize: '0.9rem' }}>
+                                    Rôle actuel: <strong>{
+                                        member.statut === 'superadmin' ? 'COPIL+' :
+                                            member.statut === 'admin' ? 'COPIL' :
+                                                member.statut === 'moderateur' ? 'Référent' : 'Alumni'
+                                    }</strong>
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
 
                 <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
