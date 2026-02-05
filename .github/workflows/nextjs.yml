@@ -5,7 +5,10 @@ on:
   push:
     branches: ["main"]
   workflow_dispatch:
-  working-directory: ./ja-alumni-erp
+
+defaults:
+  run:
+    working-directory: ./ja-alumni-erp
 
 permissions:
   contents: read
