@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Search, ChevronLeft, ChevronRight, Edit, Trash2, Download, Eye } from 'lucide-react';
 import MemberDetailModal from './MemberDetailModal';
@@ -44,11 +44,7 @@ export default function MembersTable({ region }: MembersTableProps) {
         fetchUserRole();
     }, []);
 
-    useEffect(() => {
-        fetchMembers();
-    }, [page, debouncedSearch, region]);
-
-    const fetchMembers = async () => {
+    const fetchMembers = useCallback(async () => {
         setLoading(true);
         try {
             const start = (page - 1) * LIMIT;
@@ -80,7 +76,11 @@ export default function MembersTable({ region }: MembersTableProps) {
         } finally {
             setLoading(false);
         }
-    };
+    }, [page, debouncedSearch, region]);
+
+    useEffect(() => {
+        fetchMembers();
+    }, [fetchMembers]);
 
     const handleExport = async () => {
         try {

@@ -130,7 +130,7 @@ export default function EventModal({ event, isOpen, onClose, onUpdate, userRegio
 
                 <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '1rem' }}>
                     <div>
-                        <label className="label">Nom de l'événement *</label>
+                        <label className="label">Nom de l&apos;événement *</label>
                         <input className="input" name="nom" value={formData.nom} onChange={handleChange} required />
                     </div>
 

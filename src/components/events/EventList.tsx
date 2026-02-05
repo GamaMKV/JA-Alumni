@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import EventCard from './EventCard';
 import EventModal from './EventModal';
@@ -25,7 +25,7 @@ export default function EventList({ limit, showPast = false, regionFilter, admin
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingEvent, setEditingEvent] = useState<any>(null);
 
-    const fetchData = async () => {
+    const fetchData = useCallback(async () => {
         setLoading(true);
         try {
             // 1. Get User Info
@@ -73,11 +73,11 @@ export default function EventList({ limit, showPast = false, regionFilter, admin
         } finally {
             setLoading(false);
         }
-    };
+    }, [limit, showPast, regionFilter]);
 
     useEffect(() => {
         fetchData();
-    }, [limit, showPast, regionFilter]);
+    }, [fetchData]);
 
     const handleCreateClick = () => {
         setEditingEvent(null);
