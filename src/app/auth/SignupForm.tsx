@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
-import { User, Mail, Lock, Calendar, Briefcase, MapPin, CheckCircle, ArrowRight, ArrowLeft } from 'lucide-react';
+import { User, Mail, Lock, Calendar, Briefcase, MapPin, CheckCircle, ArrowRight, ArrowLeft, Map } from 'lucide-react';
+import { REGIONS, DEPARTMENTS, SITUATIONS } from '@/lib/constants';
 
 export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
     // Steps: 1=Eligibility, 2=Mini-Entreprise, 3=Identity/Auth
@@ -19,6 +20,9 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
         school: '',
         miniName: '',
         org: 'EPA',
+        region: '',
+        departement: '',
+        situation: '',
         lastName: '',
         firstName: '',
         phone: '',
@@ -30,7 +34,11 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value, type } = e.target;
         const val = type === 'checkbox' ? (e.target as HTMLInputElement).checked : value;
-        setFormData(prev => ({ ...prev, [name]: val }));
+        setFormData(prev => {
+            const newData = { ...prev, [name]: val };
+            if (name === 'region') newData.departement = '';
+            return newData;
+        });
     };
 
     const validateStep1 = () => {
@@ -57,6 +65,13 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
     };
 
     const validateStep3 = () => {
+        if (!formData.region) return "La région est requise.";
+        if (formData.region && !formData.departement) return "Le département est requis.";
+        if (!formData.situation) return "La situation est requise.";
+        return null;
+    };
+
+    const validateStep4 = () => {
         if (!formData.lastName || !formData.firstName) return "Nom et Prénom sont requis.";
         if (!formData.email || !formData.email.includes('@')) return "Email invalide.";
         if (formData.password.length < 6) return "Le mot de passe doit faire au moins 6 caractères.";
@@ -69,6 +84,7 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
         let err = null;
         if (step === 1) err = validateStep1();
         else if (step === 2) err = validateStep2();
+        else if (step === 3) err = validateStep3();
 
         if (err) {
             setError(err);
@@ -80,7 +96,7 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
     const handleSignup = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
-        const err = validateStep3();
+        const err = validateStep4();
         if (err) {
             setError(err);
             return;
@@ -110,7 +126,9 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
                     mini_entreprise_nom: formData.miniName,
                     mini_entreprise_organisation: formData.org,
                     date_entree_ja: new Date().toISOString(),
-                    situation: 'Etudiant', // Default
+                    situation: formData.situation,
+                    region: formData.region,
+                    departement: formData.departement,
                     statut: 'membre'
                 })
                 .eq('id', authData.user.id);
@@ -141,7 +159,7 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
 
             {/* Progress Dots */}
             <div style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem', marginBottom: '2rem' }}>
-                {[1, 2, 3].map(i => (
+                {[1, 2, 3, 4].map(i => (
                     <div key={i} style={{
                         width: '10px', height: '10px', borderRadius: '50%',
                         background: step >= i ? 'var(--color-primary)' : '#e5e7eb',
@@ -258,6 +276,62 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
                 {step === 3 && (
                     <div className="fade-in">
                         <h3 style={{ fontSize: '1.2rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <Map size={20} /> Votre Profil
+                        </h3>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            <div>
+                                <label className="label">Région *</label>
+                                <select
+                                    name="region"
+                                    value={formData.region}
+                                    onChange={handleChange}
+                                    className="input"
+                                    style={{ width: '100%' }}
+                                >
+                                    <option value="">Sélectionner une région</option>
+                                    {REGIONS.map(r => <option key={r} value={r}>{r}</option>)}
+                                </select>
+                            </div>
+
+                            {formData.region && (
+                                <div>
+                                    <label className="label">Département *</label>
+                                    <select
+                                        name="departement"
+                                        value={formData.departement}
+                                        onChange={handleChange}
+                                        className="input"
+                                        style={{ width: '100%' }}
+                                    >
+                                        <option value="">Sélectionner un département</option>
+                                        {(DEPARTEMENTS[formData.region] || []).map((d: string) => (
+                                            <option key={d} value={d}>{d}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
+
+                            <div>
+                                <label className="label">Situation *</label>
+                                <select
+                                    name="situation"
+                                    value={formData.situation}
+                                    onChange={handleChange}
+                                    className="input"
+                                    style={{ width: '100%' }}
+                                >
+                                    <option value="">Votre situation actuelle</option>
+                                    {SITUATIONS.map(s => <option key={s} value={s}>{s}</option>)}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {step === 4 && (
+                    <div className="fade-in">
+                        <h3 style={{ fontSize: '1.2rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                             <User size={20} /> Vos Identifiants
                         </h3>
 
@@ -351,7 +425,7 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
                     </button>
                 )}
 
-                {step < 3 ? (
+                {step < 4 ? (
                     <button
                         type="button"
                         className="btn btn-primary"
