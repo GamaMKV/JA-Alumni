@@ -75,9 +75,10 @@ export default function MemberDetailModal({ member, isOpen, onClose, onUpdate, c
                             fontSize: '0.8rem', padding: '0.2rem 0.5rem', borderRadius: '1rem',
                             background: 'var(--color-primary-light)', color: 'var(--color-primary-dark)'
                         }}>
-                            {member.statut === 'membre' ? 'Alumni' :
-                                member.statut === 'moderateur' ? 'Référent' :
-                                    member.statut === 'admin' ? 'COPIL' : member.statut}
+                            {member.statut === 'alumni' ? 'Alumni' :
+                                member.statut === 'referent' ? 'Référent' :
+                                    member.statut === 'copil' ? 'COPIL' :
+                                        member.statut === 'copil_plus' ? 'COPIL+' : member.statut}
                         </span>
                     )}
                 </h2>
@@ -166,7 +167,7 @@ export default function MemberDetailModal({ member, isOpen, onClose, onUpdate, c
                     </div>
 
                     {/* Role Management (COPIL+ Only) */}
-                    {currentUserRole === 'superadmin' && (
+                    {currentUserRole === 'copil_plus' && (
                         <div style={{ padding: '1rem', border: '1px solid var(--color-primary-light)', borderRadius: '0.5rem', marginTop: '1rem' }}>
                             <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', color: 'var(--color-primary-dark)' }}>Gestion du Rôle (COPIL+)</h4>
                             {isEditing ? (
@@ -176,17 +177,17 @@ export default function MemberDetailModal({ member, isOpen, onClose, onUpdate, c
                                     value={formData.statut}
                                     onChange={handleChange}
                                 >
-                                    <option value="membre">Alumni (Membre)</option>
-                                    <option value="moderateur">Référent (Modérateur)</option>
-                                    <option value="admin">COPIL (Admin)</option>
-                                    <option value="superadmin">COPIL+ (SuperAdmin)</option>
+                                    <option value="alumni">Alumni</option>
+                                    <option value="referent">Référent</option>
+                                    <option value="copil">COPIL</option>
+                                    <option value="copil_plus">COPIL+</option>
                                 </select>
                             ) : (
                                 <div style={{ fontSize: '0.9rem' }}>
                                     Rôle actuel: <strong>{
-                                        member.statut === 'superadmin' ? 'COPIL+' :
-                                            member.statut === 'admin' ? 'COPIL' :
-                                                member.statut === 'moderateur' ? 'Référent' : 'Alumni'
+                                        member.statut === 'copil_plus' ? 'COPIL+' :
+                                            member.statut === 'copil' ? 'COPIL' :
+                                                member.statut === 'referent' ? 'Référent' : 'Alumni'
                                     }</strong>
                                 </div>
                             )}

@@ -51,7 +51,7 @@ export default function EventModal({ event, isOpen, onClose, onUpdate, userRegio
                     date: new Date().toISOString().split('T')[0],
                     time: '18:00',
                     lieu: '',
-                    region_id: userRole === 'moderateur' && userRegion ? userRegion : '', // Default to user region if mod
+                    region_id: userRole === 'referent' && userRegion ? userRegion : '', // Default to user region if referent
                     description: ''
                 });
             }
@@ -150,7 +150,7 @@ export default function EventModal({ event, isOpen, onClose, onUpdate, userRegio
                         <input className="input" name="lieu" value={formData.lieu} onChange={handleChange} placeholder="Ex: Paris, En ligne..." />
                     </div>
 
-                    {userRole === 'admin' && (
+                    {['copil', 'copil_plus'].includes(userRole) && (
                         <div>
                             <label className="label">Région</label>
                             <select className="input" name="region_id" value={formData.region_id} onChange={handleChange}>
@@ -163,7 +163,7 @@ export default function EventModal({ event, isOpen, onClose, onUpdate, userRegio
                     {/* Moderators are locked to their region usually, or allowed to post National? Let's assume locked or National if allowed. 
                          For simplicity, if role is moderator, we hide or freeze this if we want strict control, 
                          but the form init logic handles the default. Visual feedback: */}
-                    {userRole === 'moderateur' && (
+                    {userRole === 'referent' && (
                         <div>
                             <label className="label">Région</label>
                             <div style={{ padding: '0.5rem', background: '#f5f5f5', borderRadius: '4px', color: '#666' }}>

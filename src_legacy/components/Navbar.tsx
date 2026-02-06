@@ -36,12 +36,14 @@ export default function Navbar() {
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
             if (!mounted) return;
 
-            // Only update if strictly necessary (SIGNED_IN or user ID changed) to avoid re-fetches on TOKEN_REFRESHED
+            // Only update if user CHANGED. 
+            // 'SIGNED_IN' can fire on focus/recovery, so we must check if it's actually a different user.
             const curUserId = session?.user?.id;
+            const prevUserId = user?.id;
 
-            // If we have a user, and it's a new login or user changed, fetch profile
-            if (curUserId && (event === 'SIGNED_IN' || user?.id !== curUserId)) {
+            if (curUserId && curUserId !== prevUserId) {
                 setUser(session.user);
+                // Fetch profile only if new user
                 const { data } = await supabase
                     .from('profiles')
                     .select('*')
@@ -49,12 +51,22 @@ export default function Navbar() {
                     .single();
                 if (mounted) setProfile(data);
             } else if (!curUserId) {
-                // Initial load or signed out
-                setUser(null);
-                if (mounted) setProfile(null);
+                // Signed out
+                if (prevUserId) {
+                    setUser(null);
+                    if (mounted) setProfile(null);
+                }
             } else {
-                // Just token refresh, update user object but don't refetch profile
-                setUser(session.user);
+                // User exists and is same, just update session object if needed (e.g. token refresh)
+                // But avoid triggering renders if object is deep-equal? 
+                // For simplicity, we just set it if we want to keep session fresh in state, 
+                // but if 'user' state causes children re-renders, consider checking equality.
+                // However, session.user ref might change. 
+                // To stop the loop, we simply DO NOT fetch profile again.
+                // We update 'user' state which is cheap.
+                if (JSON.stringify(user) !== JSON.stringify(session.user)) {
+                    setUser(session.user);
+                }
             }
         });
 
@@ -82,7 +94,8 @@ export default function Navbar() {
                     {user ? (
                         <>
                             <Link href="/events" className="btn btn-outline">Événements</Link>
-                            {(profile?.statut === 'admin' || profile?.statut === 'superadmin' || profile?.statut === 'moderateur') && (
+                            <Link href="/team" className="btn btn-outline">L&apos;équipe</Link>
+                            {(profile?.statut === 'copil_plus' || profile?.statut === 'referent') && (
                                 <Link href="/dashboard" className="btn btn-primary">Dashboard</Link>
                             )}
                             <Link href="/profile" className="btn btn-outline" title="Mon Profil">

@@ -103,7 +103,7 @@ export default function EventList({ limit, showPast = false, regionFilter, admin
 
     if (loading) return <div>Chargement des événements...</div>;
 
-    const canCreate = adminMode || ['admin', 'moderateur'].includes(userRole);
+    const canCreate = adminMode || ['copil_plus', 'copil', 'referent'].includes(userRole);
 
     return (
         <div>

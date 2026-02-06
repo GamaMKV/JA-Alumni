@@ -169,12 +169,13 @@ export default function MembersTable({ region }: MembersTableProps) {
                                             padding: '0.25rem 0.5rem',
                                             borderRadius: '1rem',
                                             fontSize: '0.8rem',
-                                            background: member.statut === 'admin' ? 'var(--color-primary)' : 'var(--color-primary-light)',
-                                            color: member.statut === 'admin' ? 'white' : 'var(--color-primary-dark)'
+                                            background: ['copil', 'copil_plus'].includes(member.statut) ? 'var(--color-primary)' : 'var(--color-primary-light)',
+                                            color: ['copil', 'copil_plus'].includes(member.statut) ? 'white' : 'var(--color-primary-dark)'
                                         }}>
-                                            {member.statut === 'membre' ? 'Alumni' :
-                                                member.statut === 'moderateur' ? 'Référent' :
-                                                    member.statut === 'admin' ? 'COPIL' : member.statut}
+                                            {member.statut === 'alumni' ? 'Alumni' :
+                                                member.statut === 'referent' ? 'Référent' :
+                                                    member.statut === 'copil' ? 'COPIL' :
+                                                        member.statut === 'copil_plus' ? 'COPIL+' : member.statut}
                                         </span>
                                     </td>
                                     <td style={{ padding: '0.75rem' }}>

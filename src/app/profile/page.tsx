@@ -1,91 +1,30 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
-import { User, Mail, MapPin, Briefcase, Phone, Calendar, Save, X, Edit2, AlertTriangle, CheckSquare, Square } from 'lucide-react';
+import { supabase } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
-
+import Avatar from '@/components/ui/Avatar';
+import { Save, User, MapPin, Briefcase, Phone, Mail, Calendar, Loader, Camera, AlertTriangle } from 'lucide-react';
 import geoData from '@/lib/geoData';
 
 const { regions, departments } = geoData;
 
-// Component defined outside to prevent re-renders losing focus
-const InfoRow = ({ icon: Icon, label, value, name, type = 'text', options, isEditing, onChange }: any) => {
-    if (!isEditing) {
-        return (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem 0', borderBottom: '1px solid #eee' }}>
-                <div style={{ padding: '0.5rem', background: 'var(--color-primary-light)', borderRadius: '50%', color: 'var(--color-primary-dark)' }}>
-                    <Icon size={20} />
-                </div>
-                <div>
-                    <div style={{ fontSize: '0.85rem', color: '#666' }}>{label}</div>
-                    <div style={{ fontWeight: 500 }}>{value instanceof Date ? value.toLocaleDateString() : value || 'Non renseigné'}</div>
-                </div>
-            </div>
-        );
-    }
-
-    return (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem 0', borderBottom: '1px solid #eee' }}>
-            <div style={{ padding: '0.5rem', background: 'var(--color-primary-light)', borderRadius: '50%', color: 'var(--color-primary-dark)' }}>
-                <Icon size={20} />
-            </div>
-            <div style={{ flex: 1 }}>
-                <label style={{ fontSize: '0.85rem', color: '#666', display: 'block', marginBottom: '0.2rem' }}>{label}</label>
-                {type === 'select' ? (
-                    <select
-                        name={name}
-                        value={value || ''}
-                        onChange={onChange}
-                        style={{ width: '100%', padding: '0.5rem', borderRadius: '0.5rem', border: '1px solid #ccc' }}
-                    >
-                        <option value="">Sélectionner...</option>
-                        {options && options.map((opt: string) => (
-                            <option key={opt} value={opt}>{opt}</option>
-                        ))}
-                    </select>
-                ) : (
-                    <input
-                        type={type}
-                        name={name}
-                        value={value || ''}
-                        onChange={onChange}
-                        style={{ width: '100%', padding: '0.5rem', borderRadius: '0.5rem', border: '1px solid #ccc' }}
-                    />
-                )}
-            </div>
-        </div>
-    );
-};
-
 export default function ProfilePage() {
     const [profile, setProfile] = useState<any>(null);
-    const [originalProfile, setOriginalProfile] = useState<any>(null); // To revert changes
     const [loading, setLoading] = useState(true);
-    const [isEditing, setIsEditing] = useState(false);
-    const [isSaving, setIsSaving] = useState(false);
-    const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
-    const [rgpdNeeded, setRgpdNeeded] = useState(false);
+    const [saving, setSaving] = useState(false);
 
-    const ORGANIZATIONS = [
-        { value: 'EPA (S)', label: 'EPA - Format S (Journée)' },
-        { value: 'EPA (M)', label: 'EPA - Format M (Semaines)' },
-        { value: 'EPA (L)', label: 'EPA - Format L (Année)' },
-        { value: '1000_ENT', label: '1000 Entrepreneurs' }
-    ];
-
-    const router = useRouter();
-
-    // Generate years from 2000 to Current Year + 1
     const currentYear = new Date().getFullYear();
-    const YEARS = Array.from({ length: (currentYear + 1) - 2000 + 1 }, (_, i) => (2000 + i).toString()).reverse();
+    const years = Array.from({ length: (currentYear + 1) - 2000 + 1 }, (_, i) => (2000 + i).toString()).reverse();
+    const [uploading, setUploading] = useState(false);
+    const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+    const router = useRouter();
 
     useEffect(() => {
         const getProfile = async () => {
             const { data: { session } } = await supabase.auth.getSession();
-
             if (!session) {
-                router.push('/auth');
+                router.push('/auth/login');
                 return;
             }
 
@@ -95,467 +34,361 @@ export default function ProfilePage() {
                 .eq('id', session.user.id)
                 .single();
 
-            if (error) {
-                console.error('Error fetching profile:', error);
-                setMessage({ type: 'error', text: `Erreur: ${error.message} (${error.code})` }); // Display specific error
-            }
-
-            if (data) {
-                setProfile(data);
-                setOriginalProfile(data);
-
-                // Check RGPD (2 YEARS)
-                const lastRgpd = data.derniere_maj_rgpd ? new Date(data.derniere_maj_rgpd) : null;
-                const twoYearsAgo = new Date();
-                twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
-
-                if (!data.consentement_rgpd || !lastRgpd || lastRgpd < twoYearsAgo) {
-                    setRgpdNeeded(true);
-                }
-            }
+            if (error) console.error(error);
+            setProfile(data);
             setLoading(false);
         };
-
         getProfile();
     }, [router]);
 
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
-
-        // Special handling for Region change to reset Departement
         if (name === 'region') {
-            setProfile((prev: any) => ({
-                ...prev,
-                [name]: value,
-                departement: '' // Reset dept when region changes
-            }));
+            setProfile((p: any) => ({ ...p, region: value, department: '' }));
         } else {
-            setProfile((prev: any) => ({ ...prev, [name]: value }));
+            setProfile((p: any) => ({ ...p, [name]: value }));
         }
     };
 
-    const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const { name, checked } = e.target;
-        setProfile((prev: any) => ({ ...prev, [name]: checked }));
+    const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        try {
+            setUploading(true);
+            if (!event.target.files || event.target.files.length === 0) {
+                throw new Error('Sélectionnez une image.');
+            }
+
+            const file = event.target.files[0];
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${profile.id}-${Math.random()}.${fileExt}`;
+            const filePath = `${fileName}`;
+
+            // Upload
+            const { error: uploadError } = await supabase.storage
+                .from('avatars')
+                .upload(filePath, file);
+
+            if (uploadError) throw uploadError;
+
+            // Get URL
+            const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(filePath);
+
+            // Update local state (will be saved on "Enregistrer" or separate call? Let's save immediately for Avatar)
+            const { error: updateError } = await supabase
+                .from('profiles')
+                .update({ avatar_url: publicUrl })
+                .eq('id', profile.id);
+
+            if (updateError) throw updateError;
+
+            setProfile((p: any) => ({ ...p, avatar_url: publicUrl }));
+            setMessage({ type: 'success', text: "Avatar mis à jour !" });
+
+        } catch (error: any) {
+            setMessage({ type: 'error', text: error.message });
+        } finally {
+            setUploading(false);
+        }
     };
 
     const handleSave = async () => {
-        setIsSaving(true);
+        setSaving(true);
         setMessage(null);
 
-        // Validation Client-side
-        if (!profile.email || !profile.email.includes('@')) {
-            setMessage({ type: 'error', text: "L'adresse email est invalide." });
-            setIsSaving(false);
-            return;
-        }
-
-        if (!profile.prenom || !profile.nom) {
-            setMessage({ type: 'error', text: "Le prénom et le nom sont obligatoires." });
-            setIsSaving(false);
-            return;
-        }
-
         try {
-            // 1. Sanitize Data
-            // CAST year to integer safely
-            let safeYear: number | null = null;
-            if (profile.mini_entreprise_annee && profile.mini_entreprise_annee !== '') {
-                safeYear = parseInt(String(profile.mini_entreprise_annee), 10);
-                if (isNaN(safeYear)) safeYear = null;
-            }
-
-            const sanitizedUpdates = {
-                ...profile,
-                anniversaire: profile.anniversaire === '' ? null : profile.anniversaire,
-                mini_entreprise_annee: safeYear,
-                updated_at: new Date(),
-                derniere_maj_rgpd: profile.consentement_rgpd ? new Date() : profile.derniere_maj_rgpd
-            };
-
-            // Separate Email Update logic
-            if (profile.email !== originalProfile.email) {
-                const { error: emailError } = await supabase.auth.updateUser({ email: profile.email });
-                if (emailError) throw emailError;
-                setMessage({ type: 'success', text: 'Profil mis à jour. Vérifiez vos emails.' });
-            }
-
-            const { error, data } = await supabase
+            const { error } = await supabase
                 .from('profiles')
-                .update(sanitizedUpdates)
-                .eq('id', profile.id)
-                .select(); // Select to confirm update
+                .update({
+                    first_name: profile.first_name,
+                    last_name: profile.last_name,
+                    phone: profile.phone,
+                    birth_date: profile.birth_date,
+                    region: profile.region,
+                    department: profile.department,
+                    bio: profile.bio,
+                    linkedin_url: profile.linkedin_url,
 
-            if (error) {
-                console.error("Supabase Error:", error);
-                throw error;
-            }
+                    // Mini-Entreprise
+                    mini_ent_year: profile.mini_ent_year ? parseInt(profile.mini_ent_year) : null,
+                    mini_ent_org: profile.mini_ent_org,
+                    mini_ent_format: profile.mini_ent_format,
+                    mini_ent_name: profile.mini_ent_name,
+                    mini_ent_school: profile.mini_ent_school,
 
-            setOriginalProfile(sanitizedUpdates);
-            setProfile(sanitizedUpdates);
-            setIsEditing(false);
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', profile.id);
 
-            if (sanitizedUpdates.consentement_rgpd) {
-                setRgpdNeeded(false);
-            }
-
-            if (!message) setMessage({ type: 'success', text: 'Profil mis à jour avec succès !' });
+            if (error) throw error;
+            setMessage({ type: 'success', text: "Profil mis à jour avec succès." });
 
         } catch (error: any) {
-            console.error('Error updating profile FULL:', error);
-
-            let userMessage = error.message || 'Une erreur est survenue.';
-
-            if (error.code === '22007') {
-                userMessage = "Date invalide (Format).";
-            } else if (error.code === '23514') {
-                userMessage = `Critères non respectés (Check Constraint). Vérifiez l'organisation.`;
-            } else if (error.code === '22P02') {
-                userMessage = "Type de donnée invalide (ex: Texte au lieu de nombre).";
-            }
-
-            setMessage({ type: 'error', text: `${userMessage} (Code: ${error.code})` });
+            setMessage({ type: 'error', text: error.message });
         } finally {
-            setIsSaving(false);
+            setSaving(false);
         }
     };
 
-    const handleDeleteAccount = async () => {
-        if (!window.confirm("Êtes-vous sûr de vouloir supprimer votre compte ? Cette action sera effective dans 7 jours.")) return;
+    if (loading) return <div className="flex justify-center p-12"><Loader className="animate-spin text-slate-400" /></div>;
 
-        try {
-            // Calculate date + 7 days
-            const deletionDate = new Date();
-            deletionDate.setDate(deletionDate.getDate() + 7);
-
-            const { error } = await supabase
-                .from('profiles')
-                .update({ deletion_scheduled_at: deletionDate })
-                .eq('id', profile.id);
-
-            if (error) throw error;
-
-            setProfile({ ...profile, deletion_scheduled_at: deletionDate });
-            setMessage({ type: 'success', text: `Votre compte sera supprimé le ${deletionDate.toLocaleDateString()}.` });
-
-        } catch (error: any) {
-            console.error(error);
-            setMessage({ type: 'error', text: "Erreur lors de la demande de suppression." });
-        }
-    };
-
-    const handleCancelDelete = async () => {
-        try {
-            const { error } = await supabase
-                .from('profiles')
-                .update({ deletion_scheduled_at: null })
-                .eq('id', profile.id);
-
-            if (error) throw error;
-
-            setProfile({ ...profile, deletion_scheduled_at: null });
-            setMessage({ type: 'success', text: "La suppression de votre compte a été annulée." });
-
-        } catch (error: any) {
-            console.error(error);
-            setMessage({ type: 'error', text: "Erreur lors de l'annulation." });
-        }
-    };
-
-    const handleCancel = () => {
-        setProfile(originalProfile);
-        setIsEditing(false);
-        setMessage(null);
-    };
-
-    // Calculate available departments based on current selected region
-    const availableDepartements = profile?.region ? departments[profile.region] || [] : [];
-
-    if (loading) return <div className="container" style={{ padding: '2rem' }}>Chargement...</div>;
+    // Handle missing profile (e.g. registration error)
     if (!profile) return (
-        <div className="container" style={{ padding: '2rem' }}>
-            Profil introuvable.
-            {message && <div style={{ color: 'red', marginTop: '1rem' }}>Détail: {message.text}</div>}
+        <div className="flex flex-col items-center justify-center min-h-[50vh] p-4 text-center">
+            <div className="bg-orange-50 p-8 rounded-xl border border-orange-100 max-w-md">
+                <AlertTriangle className="h-12 w-12 text-orange-500 mx-auto mb-4" />
+                <h2 className="text-xl font-bold text-slate-900 mb-2">Profil incomplet</h2>
+                <p className="text-slate-600 mb-6">
+                    Votre compte utilisateur existe, mais votre profil membre n&apos;a pas été créé correctement.
+                </p>
+                <button
+                    onClick={async () => {
+                        setLoading(true);
+                        const { data: { session } } = await supabase.auth.getSession();
+                        if (session) {
+                            const { error } = await supabase.from('profiles').insert({
+                                id: session.user.id,
+                                email: session.user.email,
+                                first_name: session.user.user_metadata.firstName || 'Sans nom',
+                                last_name: session.user.user_metadata.lastName || '',
+                                role: 'member',
+                                updated_at: new Date().toISOString()
+                            });
+                            if (error) {
+                                alert("Erreur: " + error.message);
+                            } else {
+                                window.location.reload();
+                            }
+                        }
+                        setLoading(false);
+                    }}
+                    className="btn-primary w-full flex items-center justify-center gap-2"
+                >
+                    <Save size={18} /> Initialiser mon profil
+                </button>
+            </div>
         </div>
     );
 
+    const availableDepts = profile.region ? departments[profile.region] || [] : [];
+
     return (
-        <div className="container" style={{ padding: '2rem 0' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                <h1>Mon Profil</h1>
-                {/* Header Actions */}
-                <div>
-                    {!isEditing ? (
-                        <button
-                            onClick={() => setIsEditing(true)}
-                            className="btn-primary"
-                            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-                        >
-                            <Edit2 size={18} /> Modifier
-                        </button>
-                    ) : (
-                        <div style={{ display: 'flex', gap: '1rem' }}>
-                            <button
-                                onClick={handleCancel}
-                                style={{ padding: '0.5rem 1rem', borderRadius: '0.5rem', border: '1px solid #ccc', background: 'white' }}
-                            >
-                                <X size={18} /> Annuler
-                            </button>
-                            <button
-                                onClick={handleSave}
-                                className="btn-primary"
-                                disabled={isSaving}
-                                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-                            >
-                                {isSaving ? 'Enregistrement...' : <><Save size={18} /> Enregistrer</>}
-                            </button>
-                        </div>
-                    )}
-                </div>
-            </div>
+        <div className="container mx-auto px-4 py-8">
+            <h1 className="text-3xl font-bold text-slate-900 mb-8">Mon Profil</h1>
 
             {message && (
-                <div style={{
-                    padding: '1rem',
-                    borderRadius: '0.5rem',
-                    marginBottom: '1rem',
-                    background: message.type === 'success' ? '#d4edda' : '#f8d7da',
-                    color: message.type === 'success' ? '#155724' : '#721c24',
-                    border: `1px solid ${message.type === 'success' ? '#c3e6cb' : '#f5c6cb'}`
-                }}>
+                <div className={`mb-6 p-4 rounded-lg flex items-center gap-2 text-sm ${message.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
                     {message.text}
                 </div>
             )}
 
-            {/* Account Deletion Warning */}
-            {profile.deletion_scheduled_at && !message && (
-                <div style={{
-                    padding: '1rem',
-                    borderRadius: '0.5rem',
-                    marginBottom: '1rem',
-                    background: '#f8d7da',
-                    color: '#721c24',
-                    border: '1px solid #f5c6cb',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: '1rem'
-                }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                        <AlertTriangle size={24} />
-                        <div>
-                            <strong>Attention :</strong> Votre compte sera définitivement supprimé le {new Date(profile.deletion_scheduled_at).toLocaleDateString()}.
-                        </div>
-                    </div>
-                    <button
-                        onClick={handleCancelDelete}
-                        style={{ padding: '0.5rem 1rem', borderRadius: '0.5rem', background: 'white', border: '1px solid #721c24', color: '#721c24', cursor: 'pointer' }}
-                    >
-                        Annuler la suppression
-                    </button>
-                </div>
-            )}
-
-            {rgpdNeeded && !message && (
-                <div style={{
-                    padding: '1rem',
-                    borderRadius: '0.5rem',
-                    marginBottom: '1rem',
-                    background: '#fff3cd',
-                    color: '#856404',
-                    border: '1px solid #ffeeba',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '1rem'
-                }}>
-                    <AlertTriangle size={24} />
-                    <div>
-                        <strong>Action requise :</strong> Votre consentement RGPD a expiré (validité 2 ans). Veuillez le renouveler.
-                    </div>
-                </div>
-            )}
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '2rem' }}>
-                {/* ID Card */}
-                <div className="card" style={{ textAlign: 'center', height: 'fit-content' }}>
-                    <div style={{
-                        width: '100px', height: '100px', background: 'var(--color-primary)',
-                        borderRadius: '50%', margin: '0 auto 1rem', display: 'flex',
-                        alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '2rem'
-                    }}>
-                        {profile.prenom?.[0]}{profile.nom?.[0]}
-                    </div>
-
-                    {isEditing ? (
-                        <div style={{ marginBottom: '1rem' }}>
-                            <input
-                                name="prenom"
-                                placeholder="Prénom"
-                                value={profile.prenom || ''}
-                                onChange={handleInputChange}
-                                style={{ display: 'block', width: '100%', marginBottom: '0.5rem', padding: '0.5rem', borderRadius: '0.5rem', border: '1px solid #ccc' }}
-                            />
-                            <input
-                                name="nom"
-                                placeholder="Nom"
-                                value={profile.nom || ''}
-                                onChange={handleInputChange}
-                                style={{ display: 'block', width: '100%', padding: '0.5rem', borderRadius: '0.5rem', border: '1px solid #ccc' }}
-                            />
-                            <input
-                                name="situation"
-                                placeholder="Situation (ex: Étudiant)"
-                                value={profile.situation || ''}
-                                onChange={handleInputChange}
-                                style={{ display: 'block', width: '100%', marginTop: '0.5rem', padding: '0.5rem', borderRadius: '0.5rem', border: '1px solid #ccc' }}
-                            />
-                        </div>
-                    ) : (
-                        <>
-                            <h2>{profile.prenom} {profile.nom}</h2>
-                            <p style={{ color: '#666', marginBottom: '1rem' }}>{profile.situation || 'Membre JA Alumni'}</p>
-                        </>
-                    )}
-
-                    <div style={{
-                        display: 'inline-block', padding: '0.25rem 0.75rem', borderRadius: '1rem',
-                        background: profile.statut === 'admin' ? 'var(--color-primary)' : '#eee',
-                        color: profile.statut === 'admin' ? 'white' : '#333',
-                        fontSize: '0.9rem', marginBottom: '1rem'
-                    }}>
-                        Role: {profile.statut ? profile.statut.toUpperCase() : 'MEMBRE'}
-                    </div>
-
-                    {profile.statut !== 'admin' && (
-                        <div style={{ fontSize: '0.8rem', color: 'orange', border: '1px solid orange', padding: '0.5rem', borderRadius: '0.5rem' }}>
-                            Si vous devriez être admin, contactez le support ou vérifiez votre configuration.
-                        </div>
-                    )}
-                </div>
-
-                {/* Details */}
-                <div className="card">
-                    <h3>Informations Personnelles</h3>
-                    <InfoRow icon={Mail} label="Email" value={profile.email} name="email" type="email" isEditing={isEditing} onChange={handleInputChange} />
-                    <InfoRow icon={Phone} label="Téléphone" value={profile.telephone} name="telephone" isEditing={isEditing} onChange={handleInputChange} />
-
-                    <InfoRow
-                        icon={MapPin}
-                        label="Région"
-                        value={profile.region}
-                        name="region"
-                        type="select"
-                        options={regions}
-                        isEditing={isEditing}
-                        onChange={handleInputChange}
-                    />
-
-                    <InfoRow
-                        icon={MapPin}
-                        label="Département"
-                        value={profile.departement}
-                        name="departement"
-                        type={isEditing ? "select" : "text"} // Switch to select when editing
-                        options={availableDepartements}
-                        isEditing={isEditing}
-                        onChange={handleInputChange}
-                    />
-
-                    <InfoRow icon={Briefcase} label="Secteur d'activité" value={profile.secteur} name="secteur" isEditing={isEditing} onChange={handleInputChange} />
-                    <InfoRow icon={Calendar} label="Date d'anniversaire" value={profile.anniversaire} name="anniversaire" type="date" isEditing={isEditing} onChange={handleInputChange} />
-
-                    <h3>Ma Mini-Entreprise</h3>
-                    <InfoRow icon={Briefcase} label="Nom de la Mini" value={profile.mini_entreprise_nom} name="mini_entreprise_nom" isEditing={isEditing} onChange={handleInputChange} />
-                    <InfoRow icon={Calendar} label="Année" value={profile.mini_entreprise_annee} name="mini_entreprise_annee" type="select" options={YEARS} isEditing={isEditing} onChange={handleInputChange} />
-                    <InfoRow icon={MapPin} label="Etablissement / Ville" value={profile.mini_entreprise_ecole} name="mini_entreprise_ecole" isEditing={isEditing} onChange={handleInputChange} />
-
-                    {/* Organization Select */}
-                    {isEditing ? (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem 0', borderBottom: '1px solid #eee' }}>
-                            <div style={{ padding: '0.5rem', background: 'var(--color-primary-light)', borderRadius: '50%', color: 'var(--color-primary-dark)' }}>
-                                <Briefcase size={20} />
-                            </div>
-                            <div style={{ flex: 1 }}>
-                                <label style={{ fontSize: '0.85rem', color: '#666', display: 'block', marginBottom: '0.2rem' }}>Organisation</label>
-                                <select
-                                    name="mini_entreprise_organisation"
-                                    value={profile.mini_entreprise_organisation || ''}
-                                    onChange={handleInputChange}
-                                    style={{ width: '100%', padding: '0.5rem', borderRadius: '0.5rem', border: '1px solid #ccc' }}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Left Column: Avatar & Basic Info */}
+                <div className="glass-card flex flex-col items-center text-center h-fit">
+                    <div className="relative mb-4 group">
+                        <Avatar
+                            url={profile.avatar_url}
+                            firstName={profile.first_name}
+                            lastName={profile.last_name}
+                            size={120}
+                            className="shadow-md"
+                        />
+                        {/* Only allow upload for privileged roles */}
+                        {['admin', 'moderator', 'copil', 'referent'].includes(profile.role) && (
+                            <>
+                                <label
+                                    htmlFor="avatar-upload"
+                                    className="absolute bottom-0 right-0 bg-[var(--color-primary-600)] text-white p-2 rounded-full cursor-pointer shadow-lg hover:bg-[var(--color-primary-700)] transition-colors"
+                                    title="Modifier la photo"
                                 >
-                                    <option value="">Sélectionner une organisation</option>
-                                    {ORGANIZATIONS.map(opt => (
-                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                    ))}
-                                </select>
-                            </div>
-                        </div>
-                    ) : (
-                        <InfoRow icon={Briefcase} label="Organisation" value={profile.mini_entreprise_organisation} name="mini_entreprise_organisation" isEditing={false} onChange={handleInputChange} />
-                    )}
-
-                    {/* RGPD Section */}
-                    <div style={{ marginTop: '2rem', paddingTop: '1rem', borderTop: '1px solid #eee' }}>
-                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem' }}>
-                            <div style={{ paddingTop: '0.25rem' }}>
-                                {profile.consentement_rgpd ?
-                                    <CheckSquare size={20} color="green" /> :
-                                    <Square size={20} color={rgpdNeeded ? "red" : "gray"} />
-                                }
-                            </div>
-                            <div>
-                                <h4 style={{ margin: '0 0 0.5rem 0' }}>Consentement RGPD</h4>
-                                {isEditing ? (
-                                    <label style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', cursor: 'pointer', background: rgpdNeeded ? '#fff3cd' : 'transparent', padding: '0.5rem', borderRadius: '0.5rem' }}>
-                                        <input
-                                            type="checkbox"
-                                            name="consentement_rgpd"
-                                            checked={profile.consentement_rgpd || false}
-                                            onChange={handleCheckboxChange}
-                                        />
-                                        <span>J&apos;accepte que mes données soient traitées dans le cadre de l&apos;association JA Alumni.</span>
-                                    </label>
-                                ) : (
-                                    <p style={{ fontSize: '0.9rem', color: '#666' }}>
-                                        {profile.consentement_rgpd
-                                            ? `Accepté le ${new Date(profile.derniere_maj_rgpd).toLocaleDateString()}`
-                                            : "Non accepté"}
-                                    </p>
-                                )}
-                                <div style={{ marginTop: '0.5rem', fontSize: '0.85rem' }}>
-                                    <a href="/rgpd" target="_blank" style={{ color: 'var(--color-primary)', textDecoration: 'underline' }}>Lire notre politique de confidentialité (RGPD)</a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Zone de Danger (Suppression) */}
-                    <div style={{ marginTop: '3rem', paddingTop: '1rem', borderTop: '1px solid #faa' }}>
-                        <h4 style={{ color: '#d9534f' }}>Zone de Danger</h4>
-                        <p style={{ fontSize: '0.9rem', color: '#666', marginBottom: '1rem' }}>
-                            Vous pouvez demander la suppression de votre compte. Elle sera effective dans 7 jours.
-                        </p>
-                        {!profile.deletion_scheduled_at ? (
-                            <button
-                                onClick={handleDeleteAccount}
-                                style={{
-                                    padding: '0.5rem 1rem',
-                                    borderRadius: '0.5rem',
-                                    background: '#fff5f5',
-                                    border: '1px solid #d9534f',
-                                    color: '#d9534f',
-                                    cursor: 'pointer'
-                                }}
-                            >
-                                Supprimer mon compte
-                            </button>
-                        ) : (
-                            <div style={{ color: '#d9534f', fontSize: '0.9rem' }}>
-                                <em>Une demande de suppression est déjà en cours.</em>
-                            </div>
+                                    {uploading ? <Loader size={16} className="animate-spin" /> : <Camera size={16} />}
+                                </label>
+                                <input
+                                    id="avatar-upload"
+                                    type="file"
+                                    accept="image/*"
+                                    className="hidden"
+                                    onChange={handleAvatarUpload}
+                                    disabled={uploading}
+                                />
+                            </>
                         )}
                     </div>
 
+                    <h2 className="text-xl font-bold text-slate-900">{profile.first_name} {profile.last_name}</h2>
+                    <p className="text-slate-500 mb-4 capitalize">
+                        {profile.role === 'member' ? 'Alumni' : profile.role}
+                    </p>
+
+                    {/* DEBUG MODE FOR ADMIN/SPECIFIC USER */}
+                    {profile.email === 'mroberdeau.pro@gmail.com' && (
+                        <div className="mb-4 w-full bg-red-50 p-3 rounded-lg border border-red-200">
+                            <h4 className="text-xs font-bold text-red-700 uppercase mb-2">Debug Mode</h4>
+                            <select
+                                value={profile.role}
+                                onChange={async (e) => {
+                                    const newRole = e.target.value;
+                                    setProfile({ ...profile, role: newRole });
+                                    await supabase.from('profiles').update({ role: newRole }).eq('id', profile.id);
+                                    window.location.reload();
+                                }}
+                                className="w-full text-xs p-1 rounded border border-red-300"
+                            >
+                                <option value="member">Alumni (Member)</option>
+                                <option value="referent">Référent</option>
+                                <option value="copil">Copil</option>
+                                <option value="copil_plus">Copil +</option>
+                                <option value="admin">Admin</option>
+                            </select>
+                        </div>
+                    )}
+
+                    <div className="w-full border-t border-slate-100 pt-4 text-left space-y-3">
+                        <div className="flex items-center gap-3 text-sm text-slate-600">
+                            <Mail size={16} className="text-slate-400" />
+                            <span>{profile.email}</span>
+                        </div>
+                        <div className="flex items-center gap-3 text-sm text-slate-600">
+                            <Calendar size={16} className="text-slate-400" />
+                            <span>Né(e) le {profile.birth_date ? new Date(profile.birth_date).toLocaleDateString() : 'Non renseigné'}</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Right Column: Edit Form */}
+                <div className="glass-card lg:col-span-2">
+                    <div className="flex items-center justify-between mb-6">
+                        <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                            <User size={20} className="text-[var(--color-primary-600)]" />
+                            Informations Personnelles
+                        </h3>
+                    </div>
+
+                    <div className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Prénom</label>
+                                <input name="first_name" value={profile.first_name || ''} onChange={handleInputChange} className="input" />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Nom</label>
+                                <input name="last_name" value={profile.last_name || ''} onChange={handleInputChange} className="input" />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Téléphone</label>
+                                <div className="relative">
+                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><Phone size={16} /></div>
+                                    <input name="phone" value={profile.phone || ''} onChange={handleInputChange} className="input pl-10" />
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Profil LinkedIn (URL)</label>
+                                <div className="relative">
+                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><Briefcase size={16} /></div>
+                                    <input name="linkedin_url" value={profile.linkedin_url || ''} onChange={handleInputChange} className="input pl-10" placeholder="https://linkedin.com/in/..." />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Biographie</label>
+                            <textarea
+                                name="bio"
+                                value={profile.bio || ''}
+                                onChange={handleInputChange}
+                                className="input min-h-[100px]"
+                                placeholder="Parlez-nous de vous..."
+                            />
+                        </div>
+
+
+
+                        <div className="border-t border-slate-100 pt-6">
+                            <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2 mb-4">
+                                <Briefcase size={20} className="text-[var(--color-primary-600)]" />
+                                Expérience Mini-Entreprise
+                            </h3>
+                            <div className="space-y-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">Année de participation</label>
+                                        <select name="mini_ent_year" value={profile.mini_ent_year || ''} onChange={handleInputChange} className="input">
+                                            <option value="">Sélectionner...</option>
+                                            {years.map((y) => <option key={y} value={y}>{y}</option>)}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">Organisation</label>
+                                        <select name="mini_ent_org" value={profile.mini_ent_org || ''} onChange={handleInputChange} className="input">
+                                            <option value="">Sélectionner...</option>
+                                            <option value="EPA">EPA (Entreprendre Pour Apprendre)</option>
+                                            <option value="1000_ENT">1000 Entrepreneurs</option>
+                                            <option value="AUTRE">Autre</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                {profile.mini_ent_org === 'EPA' && (
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">Format</label>
+                                        <select name="mini_ent_format" value={profile.mini_ent_format || ''} onChange={handleInputChange} className="input">
+                                            <option value="">Sélectionner...</option>
+                                            <option value="S">S (Short)</option>
+                                            <option value="M">M (Medium)</option>
+                                            <option value="L">L (Long)</option>
+                                            <option value="XL">XL (Extra Long)</option>
+                                        </select>
+                                    </div>
+                                )}
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">Nom de la Mini-Entreprise</label>
+                                        <input name="mini_ent_name" value={profile.mini_ent_name || ''} onChange={handleInputChange} className="input" placeholder="Ex: EcoBag" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">Etablissement / Ville</label>
+                                        <input name="mini_ent_school" value={profile.mini_ent_school || ''} onChange={handleInputChange} className="input" placeholder="Ex: Lycée Victor Hugo" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="border-t border-slate-100 pt-6">
+                            <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2 mb-4">
+                                <MapPin size={20} className="text-[var(--color-primary-600)]" />
+                                Localisation
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">Région</label>
+                                    <select name="region" value={profile.region || ''} onChange={handleInputChange} className="input">
+                                        <option value="">Sélectionner...</option>
+                                        {regions.map((r: string) => <option key={r} value={r}>{r}</option>)}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">Département</label>
+                                    <select name="department" value={profile.department || ''} onChange={handleInputChange} className="input" disabled={!profile.region}>
+                                        <option value="">Sélectionner...</option>
+                                        {availableDepts.map((d: string) => <option key={d} value={d}>{d}</option>)}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="pt-6 flex justify-end">
+                            <button
+                                onClick={handleSave}
+                                disabled={saving}
+                                className="btn-primary flex items-center gap-2 px-6"
+                            >
+                                {saving ? <Loader className="animate-spin" size={18} /> : <Save size={18} />}
+                                Enregistrer les modifications
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

@@ -1,10 +1,13 @@
 import type { Metadata } from 'next';
-import '../styles/globals.css';
-import Navbar from '@/components/Navbar';
+import { Inter } from 'next/font/google';
+import './globals.css';
+import Navbar from '@/components/layout/Navbar';
+
+const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-    title: 'JA Alumni ERP',
-    description: 'Plateforme de gestion JA Alumni France',
+    title: 'JA Alumni France - Espace Membre',
+    description: 'Le réseau des anciens de la Mini-Entreprise.',
 };
 
 export default function RootLayout({
@@ -13,12 +16,12 @@ export default function RootLayout({
     children: React.ReactNode;
 }) {
     return (
-        <html lang="fr">
-            <body>
-                <div className="main-layout">
-                    <Navbar />
-                    <main style={{ flex: 1 }}>{children}</main>
-                </div>
+        <html lang="fr" className="h-full">
+            <body className={`${inter.className} flex h-full flex-col bg-[var(--bg-main)]`}>
+                <Navbar />
+                <main className="flex-1">
+                    {children}
+                </main>
             </body>
         </html>
     );

@@ -40,7 +40,7 @@ export default function EventCard({ event, userRole, userId, isRegistered, onUpd
         }
     };
 
-    const isAdminOrMod = ['admin', 'moderateur'].includes(userRole);
+    const isAdminOrMod = ['copil_plus', 'copil', 'referent'].includes(userRole);
     const date = new Date(event.date);
 
     return (
