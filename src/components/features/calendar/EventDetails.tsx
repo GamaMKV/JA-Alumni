@@ -40,29 +40,30 @@ export default function EventDetails({ isOpen, eventId, onClose, currentUserId, 
 
     useEffect(() => {
         if (!isOpen || !eventId) return;
+
+        const fetchDetails = async () => {
+            setLoading(true);
+            const { data: eventData } = await supabase
+                .from('events')
+                .select('*')
+                .eq('id', eventId)
+                .single();
+
+            if (eventData) setEvent(eventData);
+
+            const { data: participation } = await supabase
+                .from('participations')
+                .select('*')
+                .eq('event_id', eventId)
+                .eq('user_id', currentUserId)
+                .single();
+
+            setParticipating(!!participation);
+            setLoading(false);
+        };
+
         fetchDetails();
-    }, [isOpen, eventId]);
-
-    const fetchDetails = async () => {
-        setLoading(true);
-        const { data: eventData } = await supabase
-            .from('events')
-            .select('*')
-            .eq('id', eventId)
-            .single();
-
-        if (eventData) setEvent(eventData);
-
-        const { data: participation } = await supabase
-            .from('participations')
-            .select('*')
-            .eq('event_id', eventId)
-            .eq('user_id', currentUserId)
-            .single();
-
-        setParticipating(!!participation);
-        setLoading(false);
-    };
+    }, [isOpen, eventId, currentUserId]);
 
     const toggleParticipation = async () => {
         setPLoading(true);

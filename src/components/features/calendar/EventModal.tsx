@@ -156,7 +156,7 @@ export default function EventModal({ isOpen, onClose, onSuccess, userRegion, can
                                     {/* Scope & Region Selection */}
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-lg">
                                         <div>
-                                            <label className="block text-sm font-medium text-slate-700 mb-1">Portée de l'événement</label>
+                                            <label className="block text-sm font-medium text-slate-700 mb-1">Portée de l&apos;événement</label>
                                             <select
                                                 name="scope"
                                                 value={formData.scope}
@@ -189,7 +189,7 @@ export default function EventModal({ isOpen, onClose, onSuccess, userRegion, can
 
                                     {/* Event Details */}
                                     <div>
-                                        <label className="block text-sm font-medium text-slate-700 mb-1">Titre de l'événement *</label>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">Titre de l&apos;événement *</label>
                                         <input
                                             name="title"
                                             required
