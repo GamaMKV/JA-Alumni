@@ -5,29 +5,9 @@ import { supabase } from '@/lib/supabase';
 import { User, Mail, MapPin, Briefcase, Phone, Calendar, Save, X, Edit2, AlertTriangle, CheckSquare, Square } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
-// Data: Regions and Departments
-const REGIONS_DEPARTEMENTS: Record<string, string[]> = {
-    'Auvergne-Rhône-Alpes': ['Ain', 'Allier', 'Ardèche', 'Cantal', 'Drôme', 'Isère', 'Loire', 'Haute-Loire', 'Puy-de-Dôme', 'Rhône', 'Savoie', 'Haute-Savoie'],
-    'Bourgogne-Franche-Comté': ['Côte-d\'Or', 'Doubs', 'Jura', 'Nièvre', 'Haute-Saône', 'Saône-et-Loire', 'Yonne', 'Territoire de Belfort'],
-    'Bretagne': ['Côtes-d\'Armor', 'Finistère', 'Ille-et-Vilaine', 'Morbihan'],
-    'Centre-Val de Loire': ['Cher', 'Eure-et-Loir', 'Indre', 'Indre-et-Loire', 'Loir-et-Cher', 'Loiret'],
-    'Corse': ['Corse-du-Sud', 'Haute-Corse'],
-    'Grand Est': ['Ardennes', 'Aube', 'Marne', 'Haute-Marne', 'Meurthe-et-Moselle', 'Meuse', 'Moselle', 'Bas-Rhin', 'Haut-Rhin', 'Vosges'],
-    'Hauts-de-France': ['Aisne', 'Nord', 'Oise', 'Pas-de-Calais', 'Somme'],
-    'Île-de-France': ['Paris', 'Seine-et-Marne', 'Yvelines', 'Essonne', 'Hauts-de-Seine', 'Seine-Saint-Denis', 'Val-de-Marne', 'Val-d\'Oise'],
-    'Normandie': ['Calvados', 'Eure', 'Manche', 'Orne', 'Seine-Maritime'],
-    'Nouvelle-Aquitaine': ['Charente', 'Charente-Maritime', 'Corrèze', 'Creuse', 'Dordogne', 'Gironde', 'Landes', 'Lot-et-Garonne', 'Pyrénées-Atlantiques', 'Deux-Sèvres', 'Vienne', 'Haute-Vienne'],
-    'Occitanie': ['Ariège', 'Aude', 'Aveyron', 'Gard', 'Haute-Garonne', 'Gers', 'Hérault', 'Lot', 'Lozère', 'Hautes-Pyrénées', 'Pyrénées-Orientales', 'Tarn', 'Tarn-et-Garonne'],
-    'Pays de la Loire': ['Loire-Atlantique', 'Maine-et-Loire', 'Mayenne', 'Sarthe', 'Vendée'],
-    'Provence-Alpes-Côte d\'Azur': ['Alpes-de-Haute-Provence', 'Hautes-Alpes', 'Alpes-Maritimes', 'Bouches-du-Rhône', 'Var', 'Vaucluse'],
-    'Guadeloupe': ['Guadeloupe'],
-    'Martinique': ['Martinique'],
-    'Guyane': ['Guyane'],
-    'La Réunion': ['La Réunion'],
-    'Mayotte': ['Mayotte']
-};
+import geoData from '@/lib/geoData';
 
-const REGIONS = Object.keys(REGIONS_DEPARTEMENTS);
+const { regions, departments } = geoData;
 
 // Component defined outside to prevent re-renders losing focus
 const InfoRow = ({ icon: Icon, label, value, name, type = 'text', options, isEditing, onChange }: any) => {
@@ -87,7 +67,18 @@ export default function ProfilePage() {
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
     const [rgpdNeeded, setRgpdNeeded] = useState(false);
 
+    const ORGANIZATIONS = [
+        { value: 'EPA (S)', label: 'EPA - Format S (Journée)' },
+        { value: 'EPA (M)', label: 'EPA - Format M (Semaines)' },
+        { value: 'EPA (L)', label: 'EPA - Format L (Année)' },
+        { value: '1000_ENT', label: '1000 Entrepreneurs' }
+    ];
+
     const router = useRouter();
+
+    // Generate years from 2000 to Current Year + 1
+    const currentYear = new Date().getFullYear();
+    const YEARS = Array.from({ length: (currentYear + 1) - 2000 + 1 }, (_, i) => (2000 + i).toString()).reverse();
 
     useEffect(() => {
         const getProfile = async () => {
@@ -154,7 +145,7 @@ export default function ProfilePage() {
 
         // Validation Client-side
         if (!profile.email || !profile.email.includes('@')) {
-            setMessage({ type: 'error', text: "L'adresse email est invalide. Veuillez vérifier qu'elle contient un '@'." });
+            setMessage({ type: 'error', text: "L'adresse email est invalide." });
             setIsSaving(false);
             return;
         }
@@ -167,12 +158,18 @@ export default function ProfilePage() {
 
         try {
             // 1. Sanitize Data
+            // CAST year to integer safely
+            let safeYear: number | null = null;
+            if (profile.mini_entreprise_annee && profile.mini_entreprise_annee !== '') {
+                safeYear = parseInt(String(profile.mini_entreprise_annee), 10);
+                if (isNaN(safeYear)) safeYear = null;
+            }
+
             const sanitizedUpdates = {
                 ...profile,
                 anniversaire: profile.anniversaire === '' ? null : profile.anniversaire,
+                mini_entreprise_annee: safeYear,
                 updated_at: new Date(),
-                // Only update RGPD date if explicitly checked during this save, or preserve existing
-                // Logic: if checked now, set NOW. Else, keep existing.
                 derniere_maj_rgpd: profile.consentement_rgpd ? new Date() : profile.derniere_maj_rgpd
             };
 
@@ -180,15 +177,19 @@ export default function ProfilePage() {
             if (profile.email !== originalProfile.email) {
                 const { error: emailError } = await supabase.auth.updateUser({ email: profile.email });
                 if (emailError) throw emailError;
-                setMessage({ type: 'success', text: 'Profil mis à jour. Un email de confirmation a été envoyé à votre nouvelle adresse.' });
+                setMessage({ type: 'success', text: 'Profil mis à jour. Vérifiez vos emails.' });
             }
 
-            const { error } = await supabase
+            const { error, data } = await supabase
                 .from('profiles')
                 .update(sanitizedUpdates)
-                .eq('id', profile.id);
+                .eq('id', profile.id)
+                .select(); // Select to confirm update
 
-            if (error) throw error;
+            if (error) {
+                console.error("Supabase Error:", error);
+                throw error;
+            }
 
             setOriginalProfile(sanitizedUpdates);
             setProfile(sanitizedUpdates);
@@ -201,12 +202,19 @@ export default function ProfilePage() {
             if (!message) setMessage({ type: 'success', text: 'Profil mis à jour avec succès !' });
 
         } catch (error: any) {
-            console.error('Error updating profile:', error);
-            let userMessage = error.message || 'Une erreur est survenue lors de la mise à jour.';
+            console.error('Error updating profile FULL:', error);
+
+            let userMessage = error.message || 'Une erreur est survenue.';
+
             if (error.code === '22007') {
-                userMessage = "Format de date invalide. Veuillez vérifier votre date d'anniversaire.";
+                userMessage = "Date invalide (Format).";
+            } else if (error.code === '23514') {
+                userMessage = `Critères non respectés (Check Constraint). Vérifiez l'organisation.`;
+            } else if (error.code === '22P02') {
+                userMessage = "Type de donnée invalide (ex: Texte au lieu de nombre).";
             }
-            setMessage({ type: 'error', text: userMessage });
+
+            setMessage({ type: 'error', text: `${userMessage} (Code: ${error.code})` });
         } finally {
             setIsSaving(false);
         }
@@ -261,7 +269,7 @@ export default function ProfilePage() {
     };
 
     // Calculate available departments based on current selected region
-    const availableDepartements = profile?.region ? REGIONS_DEPARTEMENTS[profile.region] || [] : [];
+    const availableDepartements = profile?.region ? departments[profile.region] || [] : [];
 
     if (loading) return <div className="container" style={{ padding: '2rem' }}>Chargement...</div>;
     if (!profile) return (
@@ -437,7 +445,7 @@ export default function ProfilePage() {
                         value={profile.region}
                         name="region"
                         type="select"
-                        options={REGIONS}
+                        options={regions}
                         isEditing={isEditing}
                         onChange={handleInputChange}
                     />
@@ -455,6 +463,36 @@ export default function ProfilePage() {
 
                     <InfoRow icon={Briefcase} label="Secteur d'activité" value={profile.secteur} name="secteur" isEditing={isEditing} onChange={handleInputChange} />
                     <InfoRow icon={Calendar} label="Date d'anniversaire" value={profile.anniversaire} name="anniversaire" type="date" isEditing={isEditing} onChange={handleInputChange} />
+
+                    <h3>Ma Mini-Entreprise</h3>
+                    <InfoRow icon={Briefcase} label="Nom de la Mini" value={profile.mini_entreprise_nom} name="mini_entreprise_nom" isEditing={isEditing} onChange={handleInputChange} />
+                    <InfoRow icon={Calendar} label="Année" value={profile.mini_entreprise_annee} name="mini_entreprise_annee" type="select" options={YEARS} isEditing={isEditing} onChange={handleInputChange} />
+                    <InfoRow icon={MapPin} label="Etablissement / Ville" value={profile.mini_entreprise_ecole} name="mini_entreprise_ecole" isEditing={isEditing} onChange={handleInputChange} />
+
+                    {/* Organization Select */}
+                    {isEditing ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem 0', borderBottom: '1px solid #eee' }}>
+                            <div style={{ padding: '0.5rem', background: 'var(--color-primary-light)', borderRadius: '50%', color: 'var(--color-primary-dark)' }}>
+                                <Briefcase size={20} />
+                            </div>
+                            <div style={{ flex: 1 }}>
+                                <label style={{ fontSize: '0.85rem', color: '#666', display: 'block', marginBottom: '0.2rem' }}>Organisation</label>
+                                <select
+                                    name="mini_entreprise_organisation"
+                                    value={profile.mini_entreprise_organisation || ''}
+                                    onChange={handleInputChange}
+                                    style={{ width: '100%', padding: '0.5rem', borderRadius: '0.5rem', border: '1px solid #ccc' }}
+                                >
+                                    <option value="">Sélectionner une organisation</option>
+                                    {ORGANIZATIONS.map(opt => (
+                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+                    ) : (
+                        <InfoRow icon={Briefcase} label="Organisation" value={profile.mini_entreprise_organisation} name="mini_entreprise_organisation" isEditing={false} onChange={handleInputChange} />
+                    )}
 
                     {/* RGPD Section */}
                     <div style={{ marginTop: '2rem', paddingTop: '1rem', borderTop: '1px solid #eee' }}>

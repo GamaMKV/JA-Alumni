@@ -4,7 +4,9 @@ import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { User, Mail, Lock, Calendar, Briefcase, MapPin, CheckCircle, ArrowRight, ArrowLeft, Map } from 'lucide-react';
-import { REGIONS, DEPARTMENTS, SITUATIONS } from '@/lib/constants';
+import geoData from '@/lib/geoData';
+
+const { regions, departments, situations } = geoData;
 
 export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
     // Steps: 1=Eligibility, 2=Mini-Entreprise, 3=Identity/Auth
@@ -20,6 +22,7 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
         school: '',
         miniName: '',
         org: 'EPA',
+        miniFormat: '',
         region: '',
         departement: '',
         situation: '',
@@ -61,6 +64,7 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
         if (!formData.miniYear) return "L'année est requise.";
         if (!formData.school) return "L'établissement scolaire ou la ville est requis.";
         if (!formData.miniName) return "Le nom de la Mini-Entreprise est requis.";
+        if (formData.org === 'EPA' && !formData.miniFormat) return "Le format de la Mini-Entreprise est requis.";
         return null;
     };
 
@@ -111,6 +115,12 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
             });
 
             if (authError) throw authError;
+
+            // Check for existing user (Supabase security feature returns fake user with empty identities)
+            if (authData.user && authData.user.identities && authData.user.identities.length === 0) {
+                throw new Error("Cet email est déjà utilisé. Veuillez vous connecter.");
+            }
+
             if (!authData.user) throw new Error("Erreur lors de la création du compte.");
 
             // 2. Insert Profile Data
@@ -124,7 +134,7 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
                     mini_entreprise_annee: parseInt(formData.miniYear),
                     mini_entreprise_ecole: formData.school,
                     mini_entreprise_nom: formData.miniName,
-                    mini_entreprise_organisation: formData.org,
+                    mini_entreprise_organisation: formData.org + (formData.miniFormat ? ` (${formData.miniFormat})` : ''),
                     date_entree_ja: new Date().toISOString(),
                     situation: formData.situation,
                     region: formData.region,
@@ -227,8 +237,8 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
                                 />
                             </div>
 
-                            <div style={{ display: 'flex', gap: '1rem' }}>
-                                <div style={{ flex: 1 }}>
+                            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                                <div style={{ flex: 1, minWidth: '140px' }}>
                                     <label className="label">Année</label>
                                     <input
                                         type="number"
@@ -239,7 +249,7 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
                                         style={{ width: '100%' }}
                                     />
                                 </div>
-                                <div style={{ flex: 1 }}>
+                                <div style={{ flex: 1, minWidth: '140px' }}>
                                     <label className="label">Organisation</label>
                                     <select
                                         name="org"
@@ -253,6 +263,24 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
                                     </select>
                                 </div>
                             </div>
+
+                            {formData.org === 'EPA' && (
+                                <div className="fade-in">
+                                    <label className="label">Format de la Mini-Entreprise</label>
+                                    <select
+                                        name="miniFormat"
+                                        value={formData.miniFormat}
+                                        onChange={handleChange}
+                                        className="input"
+                                        style={{ width: '100%' }}
+                                    >
+                                        <option value="">Sélectionner le format</option>
+                                        <option value="S">Mini-Entreprise S (Journée / Demi-journée)</option>
+                                        <option value="M">Mini-Entreprise M (Plusieurs semaines)</option>
+                                        <option value="L">Mini-Entreprise L (Année scolaire)</option>
+                                    </select>
+                                </div>
+                            )}
 
                             <div>
                                 <label className="label">Établissement / Ville</label>
@@ -290,7 +318,7 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
                                     style={{ width: '100%' }}
                                 >
                                     <option value="">Sélectionner une région</option>
-                                    {REGIONS.map(r => <option key={r} value={r}>{r}</option>)}
+                                    {regions.map(r => <option key={r} value={r}>{r}</option>)}
                                 </select>
                             </div>
 
@@ -305,7 +333,7 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
                                         style={{ width: '100%' }}
                                     >
                                         <option value="">Sélectionner un département</option>
-                                        {(DEPARTEMENTS[formData.region] || []).map((d: string) => (
+                                        {(departments[formData.region] || []).map((d: string) => (
                                             <option key={d} value={d}>{d}</option>
                                         ))}
                                     </select>
@@ -322,7 +350,7 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
                                     style={{ width: '100%' }}
                                 >
                                     <option value="">Votre situation actuelle</option>
-                                    {SITUATIONS.map(s => <option key={s} value={s}>{s}</option>)}
+                                    {situations.map(s => <option key={s} value={s}>{s}</option>)}
                                 </select>
                             </div>
                         </div>

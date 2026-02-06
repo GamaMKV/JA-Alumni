@@ -1,4 +1,4 @@
-export const REGIONS = [
+const regions = [
     "Auvergne-Rhône-Alpes",
     "Bourgogne-Franche-Comté",
     "Bretagne",
@@ -19,7 +19,7 @@ export const REGIONS = [
     "Mayotte"
 ];
 
-export const DEPARTEMENTS: Record<string, string[]> = {
+const departments: Record<string, string[]> = {
     "Auvergne-Rhône-Alpes": ["Ain", "Allier", "Ardèche", "Cantal", "Drôme", "Isère", "Loire", "Haute-Loire", "Puy-de-Dôme", "Rhône", "Savoie", "Haute-Savoie"],
     "Bourgogne-Franche-Comté": ["Côte-d'Or", "Doubs", "Jura", "Nièvre", "Haute-Saône", "Saône-et-Loire", "Yonne", "Territoire de Belfort"],
     "Bretagne": ["Côtes-d'Armor", "Finistère", "Ille-et-Vilaine", "Morbihan"],
@@ -40,10 +40,18 @@ export const DEPARTEMENTS: Record<string, string[]> = {
     "Mayotte": ["Mayotte"]
 };
 
-export const SITUATIONS = [
+const situations = [
     "Etudiant",
     "En poste",
     "En recherche d'emploi",
     "Entrepreneur",
     "Autre"
 ];
+
+const geoData = {
+    regions,
+    departments,
+    situations
+};
+
+export default geoData;

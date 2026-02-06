@@ -12,9 +12,11 @@ export default function ModeratorDashboard({ user }: { user: any }) {
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
+        let mounted = true;
+
         const fetchRegionData = async () => {
             try {
-                setLoading(true);
+                if (mounted) setLoading(true);
                 // Get user region
                 const { data: userData, error: userError } = await supabase
                     .from('profiles')
@@ -25,7 +27,7 @@ export default function ModeratorDashboard({ user }: { user: any }) {
                 if (userError) throw userError;
 
                 if (userData?.region) {
-                    setProfile(userData);
+                    if (mounted) setProfile(userData);
 
                     // Fetch stats parallel
                     const p1 = supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('region', userData.region);
@@ -42,25 +44,32 @@ export default function ModeratorDashboard({ user }: { user: any }) {
                         .gte('date', new Date().toISOString());
 
                     const [resTotal, resNew, resEvents] = await Promise.all([p1, p2, p3]);
-                    setStats({
-                        totalContext: resTotal.count || 0,
-                        newThisMonth: resNew.count || 0,
-                        upcomingEvents: resEvents.count || 0
-                    });
+
+                    if (mounted) {
+                        setStats({
+                            totalContext: resTotal.count || 0,
+                            newThisMonth: resNew.count || 0,
+                            upcomingEvents: resEvents.count || 0
+                        });
+                    }
                 } else {
-                    setError("Aucune région associée à ce profil.");
+                    if (mounted) setError("Aucune région associée à ce profil.");
                 }
             } catch (err: any) {
                 console.error('Error fetching dashboard data:', err);
-                setError(err.message || 'Erreur lors du chargement');
+                if (mounted) setError(err.message || 'Erreur lors du chargement');
             } finally {
-                setLoading(false);
+                if (mounted) setLoading(false);
             }
         };
 
         if (user?.id) {
             fetchRegionData();
         }
+
+        return () => {
+            mounted = false;
+        };
     }, [user]);
 
     if (loading) return <div style={{ padding: '2rem', textAlign: 'center' }}>Chargement du tableau de bord...</div>;
