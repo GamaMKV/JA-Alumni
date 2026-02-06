@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useState, useEffect } from 'react';
+import { Fragment, useState, useEffect, useCallback } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { X, Calendar, MapPin, Clock, UserCheck, Users, AlertCircle, Edit, Trash2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
@@ -38,32 +38,32 @@ export default function EventDetails({ isOpen, eventId, onClose, currentUserId, 
     const [showEditModal, setShowEditModal] = useState(false);
     const [actionLoading, setActionLoading] = useState(false);
 
+    const fetchDetails = useCallback(async () => {
+        if (!eventId) return; // Add check inside since it's now called from outside useEffect
+
+        setLoading(true);
+        const { data: eventData } = await supabase
+            .from('events')
+            .select('*')
+            .eq('id', eventId)
+            .single();
+
+        if (eventData) setEvent(eventData);
+
+        const { data: participation } = await supabase
+            .from('participations')
+            .select('*')
+            .eq('event_id', eventId)
+            .eq('user_id', currentUserId)
+            .single();
+
+        setParticipating(!!participation);
+        setLoading(false);
+    }, [eventId, currentUserId]);
+
     useEffect(() => {
-        if (!isOpen || !eventId) return;
-
-        const fetchDetails = async () => {
-            setLoading(true);
-            const { data: eventData } = await supabase
-                .from('events')
-                .select('*')
-                .eq('id', eventId)
-                .single();
-
-            if (eventData) setEvent(eventData);
-
-            const { data: participation } = await supabase
-                .from('participations')
-                .select('*')
-                .eq('event_id', eventId)
-                .eq('user_id', currentUserId)
-                .single();
-
-            setParticipating(!!participation);
-            setLoading(false);
-        };
-
-        fetchDetails();
-    }, [isOpen, eventId, currentUserId]);
+        if (isOpen) fetchDetails();
+    }, [isOpen, fetchDetails]);
 
     const toggleParticipation = async () => {
         setPLoading(true);
