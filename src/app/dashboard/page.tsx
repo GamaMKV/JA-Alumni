@@ -103,7 +103,7 @@ export default function DashboardPage() {
                 <div className="glass-card bg-[var(--color-primary-50)] border-[var(--color-primary-100)]">
                     <h2 className="text-xl font-bold mb-4 text-[var(--color-primary-800)]">Le Saviez-vous ?</h2>
                     <p className="text-[var(--color-primary-900)]">
-                        L&apos;association JA Alumni regroupe plus de 15 000 anciens mini-entrepreneurs à travers la France. Votre participation est essentielle pour faire vivre ce réseau !
+                        Le réseau JA Alumni grandit chaque jour ! Nous sommes aujourd&apos;hui près de 200 anciens mini-entrepreneurs passionnés et engagés. Votre participation est essentielle pour faire vivre notre communauté !
                     </p>
                     <div className="mt-6">
                         <Link href="/about" className="text-sm font-semibold text-[var(--color-primary-700)] hover:underline">

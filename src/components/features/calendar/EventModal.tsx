@@ -162,7 +162,7 @@ export default function EventModal({ isOpen, onClose, onSuccess, userRegion, can
                                                 value={formData.scope}
                                                 onChange={handleChange}
                                                 className="input"
-                                                disabled={!canCreateNational} // Only admins/copil can change this
+                                                disabled={!canCreateNational} // Only COPIL can change this
                                             >
                                                 <option value="regional">Régional</option>
                                                 {canCreateNational && <option value="national">National</option>}

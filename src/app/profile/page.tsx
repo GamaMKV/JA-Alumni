@@ -114,6 +114,11 @@ export default function ProfilePage() {
                     mini_ent_name: profile.mini_ent_name,
                     mini_ent_school: profile.mini_ent_school,
 
+                    // Copil Role
+                    copil_role: profile.copil_role,
+                    is_referent: profile.is_referent,
+                    copil_start_year: profile.copil_start_year,
+
                     updated_at: new Date().toISOString()
                 })
                 .eq('id', profile.id);
@@ -192,7 +197,7 @@ export default function ProfilePage() {
                             className="shadow-md"
                         />
                         {/* Only allow upload for privileged roles */}
-                        {['admin', 'moderator', 'copil', 'referent'].includes(profile.role) && (
+                        {['copil', 'copil_plus', 'referent'].includes(profile.role) && (
                             <>
                                 <label
                                     htmlFor="avatar-upload"
@@ -218,6 +223,55 @@ export default function ProfilePage() {
                         {profile.role === 'member' ? 'Alumni' : profile.role}
                     </p>
 
+                    {['copil', 'copil_plus'].includes(profile.role) && (
+                        <div className="mb-4 w-full space-y-3">
+                            <div>
+                                <label className="block text-xs font-medium text-slate-700 mb-1 text-left">Fonction au sein du Copil</label>
+                                <select
+                                    name="copil_role"
+                                    value={profile.copil_role || ''}
+                                    onChange={handleInputChange}
+                                    className="w-full text-xs p-2 rounded border border-slate-300 focus:border-[var(--color-primary-500)] focus:ring-1 focus:ring-[var(--color-primary-500)] outline-none transition-colors"
+                                >
+                                    <option value="">Sélectionner une fonction...</option>
+                                    <option value="Présidence">Présidence</option>
+                                    <option value="Vice‑présidence">Vice‑présidence</option>
+                                    <option value="Projets digitaux">Projets digitaux</option>
+                                    <option value="Coordination des régions">Coordination des régions</option>
+                                    <option value="Événementiel">Événementiel</option>
+                                    <option value="Communication">Communication</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-medium text-slate-700 mb-1 text-left">Année d&apos;entrée au Copil</label>
+                                <select
+                                    name="copil_start_year"
+                                    value={profile.copil_start_year || ''}
+                                    onChange={handleInputChange}
+                                    className="w-full text-xs p-2 rounded border border-slate-300 focus:border-[var(--color-primary-500)] focus:ring-1 focus:ring-[var(--color-primary-500)] outline-none transition-colors"
+                                >
+                                    <option value="">Sélectionner une année...</option>
+                                    {years.map((y) => <option key={y} value={y}>{y}</option>)}
+                                </select>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="checkbox"
+                                    id="is_referent"
+                                    name="is_referent"
+                                    checked={profile.is_referent || false}
+                                    onChange={(e) => setProfile((p: any) => ({ ...p, is_referent: e.target.checked }))}
+                                    className="rounded border-slate-300 text-[var(--color-primary-600)] focus:ring-[var(--color-primary-500)]"
+                                />
+                                <label htmlFor="is_referent" className="text-xs font-medium text-slate-700">
+                                    Je suis également Référent Régional
+                                </label>
+                            </div>
+                        </div>
+                    )}
+
                     {/* DEBUG MODE FOR ADMIN/SPECIFIC USER */}
                     {profile.email === 'mroberdeau.pro@gmail.com' && (
                         <div className="mb-4 w-full bg-red-50 p-3 rounded-lg border border-red-200">
@@ -226,9 +280,17 @@ export default function ProfilePage() {
                                 value={profile.role}
                                 onChange={async (e) => {
                                     const newRole = e.target.value;
-                                    setProfile({ ...profile, role: newRole });
-                                    await supabase.from('profiles').update({ role: newRole }).eq('id', profile.id);
-                                    window.location.reload();
+                                    const oldRole = profile.role;
+                                    setProfile({ ...profile, role: newRole }); // Optimistic update
+
+                                    const { error } = await supabase.from('profiles').update({ role: newRole }).eq('id', profile.id);
+
+                                    if (error) {
+                                        alert("Erreur lors du changement de rôle: " + error.message);
+                                        setProfile({ ...profile, role: oldRole }); // Revert
+                                    } else {
+                                        window.location.reload();
+                                    }
                                 }}
                                 className="w-full text-xs p-1 rounded border border-red-300"
                             >
@@ -236,7 +298,6 @@ export default function ProfilePage() {
                                 <option value="referent">Référent</option>
                                 <option value="copil">Copil</option>
                                 <option value="copil_plus">Copil +</option>
-                                <option value="admin">Admin</option>
                             </select>
                         </div>
                     )}

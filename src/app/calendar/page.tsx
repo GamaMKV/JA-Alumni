@@ -116,8 +116,8 @@ export default function CalendarPage() {
     const calendarDays = eachDayOfInterval({ start: monthStart, end: monthEnd });
 
     // Permissions
-    const canCreateEvent = profile && ['admin', 'copil', 'referent'].includes(profile.role);
-    const canCreateNational = profile && ['admin', 'copil'].includes(profile.role);
+    const canCreateEvent = profile && ['copil', 'copil_plus', 'referent'].includes(profile.role);
+    const canCreateNational = profile && ['copil', 'copil_plus'].includes(profile.role);
 
     // Helpers
     const getDaysEvents = (date: Date) => filteredEvents.filter(e => isSameDay(parseISO(e.date_start), date));

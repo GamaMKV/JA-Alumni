@@ -1,27 +1,31 @@
-import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
-import './globals.css';
-import Navbar from '@/components/layout/Navbar';
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import "./globals.css";
+import Navbar from "@/components/layout/Navbar";
+import { Suspense } from "react";
+import GlobalLoading from "./loading";
 
-const inter = Inter({ subsets: ['latin'] });
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-    title: 'JA Alumni France - Espace Membre',
-    description: 'Le réseau des anciens de la Mini-Entreprise.',
+    title: "JA Alumni - Réseau des Anciens Mini-Entreprises",
+    description: "Plateforme de gestion et d'animation du réseau JA Alumni",
 };
 
 export default function RootLayout({
     children,
-}: {
+}: Readonly<{
     children: React.ReactNode;
-}) {
+}>) {
     return (
-        <html lang="fr" className="h-full">
-            <body className={`${inter.className} flex h-full flex-col bg-[var(--bg-main)]`}>
+        <html lang="fr">
+            <body className={inter.className}>
                 <Navbar />
-                <main className="flex-1">
-                    {children}
-                </main>
+                <Suspense fallback={<GlobalLoading />}>
+                    <main className="min-h-screen">
+                        {children}
+                    </main>
+                </Suspense>
             </body>
         </html>
     );

@@ -93,7 +93,7 @@ export default function EventDetails({ isOpen, eventId, onClose, currentUserId, 
 
     // Permission Logic
     const canManage = event && (
-        ['admin', 'copil', 'copil_plus'].includes(userRole) ||  // Copil+ and up can manage everything
+        ['copil', 'copil_plus'].includes(userRole) ||  // Copil+ can manage everything
         (userRole === 'referent' && event.region === userRegion) // Referent restricted to own region
     );
 
@@ -264,7 +264,7 @@ export default function EventDetails({ isOpen, eventId, onClose, currentUserId, 
                         onUpdate(); // Refresh parent list
                     }}
                     userRegion={userRegion}
-                    canCreateNational={['admin', 'copil', 'copil_plus'].includes(userRole)}
+                    canCreateNational={['copil', 'copil_plus'].includes(userRole)}
                     eventToEdit={event} // Pass current event data
                 />
             )}

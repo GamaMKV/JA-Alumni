@@ -1,51 +1,50 @@
 # Dependencies
 node_modules/
-ja-alumni-erp/node_modules/
+/.pnp
+.pnp.js
 
 # Next.js
 .next/
-ja-alumni-erp/.next/
 out/
+build/
+dist/
 
-# Environment
+# Environment Variables
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
 
-# Debug
+# Testing
+coverage/
+
+# Debugging
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+lerna-debug.log*
+
+# Build artifacts
+*.tsbuildinfo
+build.log
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
 
 # System Files
 .DS_Store
 Thumbs.db
+*.log
 
-# Dependencies
-node_modules/
-ja-alumni-erp/node_modules/
+# Supabase (keep only migrations)
+.supabase/
 
-# Next.js
-.next/
-ja-alumni-erp/.next/
-out/
-
-# Environment
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-# Debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
-
-# System Files
-.DS_Store
-Thumbs.db
+# Temporary/Generated files
+*.tmp
+*.temp

@@ -66,7 +66,7 @@ export default function Navbar() {
                                         Dashboard
                                     </Link>
                                     <Link href="/directory" className="text-sm font-medium text-slate-600 hover:text-[var(--color-primary-600)]">
-                                        Annuaire
+                                        Réseau
                                     </Link>
                                     <Link href="/calendar" className="text-sm font-medium text-slate-600 hover:text-[var(--color-primary-600)]">
                                         Événements
