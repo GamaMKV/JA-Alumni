@@ -5,6 +5,9 @@ import { supabase } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { Calendar, Users, Briefcase, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
+import NotificationWidget from '@/components/features/notifications/NotificationWidget';
+import NotificationPopup from '@/components/features/notifications/NotificationPopup';
+import RegisteredEventsWidget from '@/components/features/calendar/RegisteredEventsWidget';
 
 export default function DashboardPage() {
     const [profile, setProfile] = useState<any>(null);
@@ -41,6 +44,7 @@ export default function DashboardPage() {
 
     return (
         <div className="container mx-auto px-4 py-8">
+            <NotificationPopup />
             <header className="mb-8">
                 <h1 className="text-3xl font-bold text-slate-900">
                     Bonjour, <span className="text-[var(--color-primary-600)]">{profile?.first_name || 'Alumni'}</span> !
@@ -86,30 +90,36 @@ export default function DashboardPage() {
                 </Link>
             </div>
 
-            {/* Content Section (News or Recent Activity can go here) */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div className="glass-card">
+            {/* Content Section */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
+                {/* 1. My Reminders (Events) */}
+                <RegisteredEventsWidget />
+
+                {/* 2. Notifications (Automated) */}
+                <NotificationWidget />
+
+                {/* 3. News */}
+                <div className="glass-card flex flex-col h-full">
                     <h2 className="text-xl font-bold mb-4">Actualités du Réseau</h2>
-                    <div className="space-y-4">
+                    <div className="space-y-4 flex-1">
                         <div className="border-l-4 border-[var(--color-primary-500)] pl-4 py-1">
                             <p className="text-sm text-slate-500 mb-1">Il y a 2 jours</p>
-                            <h4 className="font-medium text-slate-900">Lancement de la nouvelle plateforme !</h4>
-                            <p className="text-slate-600 text-sm">Bienvenue sur le nouveau site JA Alumni. N&apos;hésitez pas à compléter votre profil.</p>
+                            <h4 className="font-medium text-slate-900">Lancement de la plateforme !</h4>
+                            <p className="text-slate-600 text-sm">Bienvenue sur le nouveau site JA Alumni.</p>
                         </div>
-                        {/* More news items... */}
                     </div>
                 </div>
+            </div>
 
-                <div className="glass-card bg-[var(--color-primary-50)] border-[var(--color-primary-100)]">
-                    <h2 className="text-xl font-bold mb-4 text-[var(--color-primary-800)]">Le Saviez-vous ?</h2>
-                    <p className="text-[var(--color-primary-900)]">
-                        Le réseau JA Alumni grandit chaque jour ! Nous sommes aujourd&apos;hui près de 200 anciens mini-entrepreneurs passionnés et engagés. Votre participation est essentielle pour faire vivre notre communauté !
-                    </p>
-                    <div className="mt-6">
-                        <Link href="/about" className="text-sm font-semibold text-[var(--color-primary-700)] hover:underline">
-                            Découvrir l&apos;histoire de JA &rarr;
-                        </Link>
-                    </div>
+            <div className="glass-card bg-[var(--color-primary-50)] border-[var(--color-primary-100)]">
+                <h2 className="text-xl font-bold mb-4 text-[var(--color-primary-800)]">Le Saviez-vous ?</h2>
+                <p className="text-[var(--color-primary-900)]">
+                    Le réseau JA Alumni grandit chaque jour ! Nous sommes aujourd&apos;hui près de 200 anciens mini-entrepreneurs passionnés et engagés. Votre participation est essentielle pour faire vivre notre communauté !
+                </p>
+                <div className="mt-6">
+                    <Link href="/about" className="text-sm font-semibold text-[var(--color-primary-700)] hover:underline">
+                        Découvrir l&apos;histoire de JA &rarr;
+                    </Link>
                 </div>
             </div>
         </div>

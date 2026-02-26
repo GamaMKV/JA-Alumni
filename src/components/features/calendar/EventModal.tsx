@@ -25,9 +25,11 @@ export default function EventModal({ isOpen, onClose, onSuccess, userRegion, can
         date_start: '',
         date_end: '',
         location_name: '',
-        scope: 'regional', // default
-        region: userRegion, // default to user's region
-        cover_image_url: ''
+        scope: 'regional',
+        region: userRegion,
+        cover_image_url: '',
+        reminder_days: 1,
+        reminder_content: ''
     });
 
     // Load initial data if editing
@@ -41,7 +43,9 @@ export default function EventModal({ isOpen, onClose, onSuccess, userRegion, can
                 location_name: eventToEdit.location_name || '',
                 scope: eventToEdit.scope || 'regional',
                 region: eventToEdit.region || userRegion,
-                cover_image_url: eventToEdit.cover_image_url || ''
+                cover_image_url: eventToEdit.cover_image_url || '',
+                reminder_days: eventToEdit.reminder_days || 1,
+                reminder_content: eventToEdit.reminder_content || ''
             });
         }
     }, [eventToEdit, userRegion]);
@@ -71,7 +75,9 @@ export default function EventModal({ isOpen, onClose, onSuccess, userRegion, can
                 location_name: formData.location_name,
                 scope: formData.scope,
                 region: formData.scope === 'national' ? null : formData.region,
-                cover_image_url: formData.cover_image_url
+                cover_image_url: formData.cover_image_url,
+                reminder_days: parseInt(formData.reminder_days.toString()),
+                reminder_content: formData.reminder_content
             };
 
             let error;
@@ -104,7 +110,9 @@ export default function EventModal({ isOpen, onClose, onSuccess, userRegion, can
                     location_name: '',
                     scope: 'regional',
                     region: userRegion,
-                    cover_image_url: ''
+                    cover_image_url: '',
+                    reminder_days: 1,
+                    reminder_content: ''
                 });
             }
 
@@ -256,16 +264,35 @@ export default function EventModal({ isOpen, onClose, onSuccess, userRegion, can
                                         />
                                     </div>
 
-                                    <div>
-                                        <label className="block text-sm font-medium text-slate-700 mb-1">Image de couverture (URL)</label>
-                                        <div className="relative">
-                                            <ImageIcon className="absolute left-3 top-3 text-slate-400" size={16} />
-                                            <input
-                                                name="cover_image_url"
-                                                value={formData.cover_image_url}
+                                    <div className="bg-blue-50 p-4 rounded-lg border border-blue-100 space-y-4">
+                                        <h4 className="text-sm font-bold text-blue-900 flex items-center gap-2">
+                                            <AlignLeft size={16} /> Système de rappel automatisé
+                                        </h4>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-xs font-medium text-blue-700 mb-1">Nombre de jours avant le rappel</label>
+                                                <input
+                                                    type="number"
+                                                    name="reminder_days"
+                                                    min="0"
+                                                    max="30"
+                                                    value={formData.reminder_days}
+                                                    onChange={handleChange}
+                                                    className="input py-1.5 text-sm"
+                                                />
+                                            </div>
+                                            <p className="text-[11px] text-blue-600 mt-5 italic">
+                                                Ce message sera envoyé aux inscrits (Email, Dashboard et Popup).
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-medium text-blue-700 mb-1">Contenu du message de rappel</label>
+                                            <textarea
+                                                name="reminder_content"
+                                                value={formData.reminder_content}
                                                 onChange={handleChange}
-                                                className="input pl-10"
-                                                placeholder="https://..."
+                                                className="input py-1.5 text-sm min-h-[60px]"
+                                                placeholder="Ex: N'oubliez pas notre rendez-vous demain !"
                                             />
                                         </div>
                                     </div>

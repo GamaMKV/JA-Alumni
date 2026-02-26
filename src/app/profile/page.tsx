@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import Avatar from '@/components/ui/Avatar';
-import { Save, User, MapPin, Briefcase, Phone, Mail, Calendar, Loader, Camera, AlertTriangle } from 'lucide-react';
+import { Save, User, MapPin, Briefcase, Phone, Mail, Calendar, Loader, Camera, AlertTriangle, Lock } from 'lucide-react';
 import geoData from '@/lib/geoData';
 
 const { regions, departments } = geoData;
@@ -17,6 +17,8 @@ export default function ProfilePage() {
     const currentYear = new Date().getFullYear();
     const years = Array.from({ length: (currentYear + 1) - 2000 + 1 }, (_, i) => (2000 + i).toString()).reverse();
     const [uploading, setUploading] = useState(false);
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
     const router = useRouter();
 
@@ -95,7 +97,8 @@ export default function ProfilePage() {
         setMessage(null);
 
         try {
-            const { error } = await supabase
+            // 1. Update Profile Data
+            const { error: profileError } = await supabase
                 .from('profiles')
                 .update({
                     first_name: profile.first_name,
@@ -123,7 +126,27 @@ export default function ProfilePage() {
                 })
                 .eq('id', profile.id);
 
-            if (error) throw error;
+            if (profileError) throw profileError;
+
+            // 2. Update Password if provided
+            if (newPassword) {
+                if (newPassword !== confirmPassword) {
+                    throw new Error("Les mots de passe ne correspondent pas.");
+                }
+                if (newPassword.length < 6) {
+                    throw new Error("Le mot de passe doit faire au moins 6 caractères.");
+                }
+
+                const { error: authError } = await supabase.auth.updateUser({
+                    password: newPassword
+                });
+
+                if (authError) throw authError;
+
+                setNewPassword('');
+                setConfirmPassword('');
+            }
+
             setMessage({ type: 'success', text: "Profil mis à jour avec succès." });
 
         } catch (error: any) {
@@ -435,6 +458,36 @@ export default function ProfilePage() {
                                         <option value="">Sélectionner...</option>
                                         {availableDepts.map((d: string) => <option key={d} value={d}>{d}</option>)}
                                     </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="border-t border-slate-100 pt-6">
+                            <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2 mb-4">
+                                <Lock size={20} className="text-[var(--color-primary-600)]" />
+                                Sécurité
+                            </h3>
+                            <p className="text-sm text-slate-500 mb-4">Laissez vide si vous ne souhaitez pas modifier votre mot de passe.</p>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">Nouveau mot de passe</label>
+                                    <input
+                                        type="password"
+                                        placeholder="••••••••"
+                                        className="input"
+                                        value={newPassword}
+                                        onChange={(e) => setNewPassword(e.target.value)}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">Confirmer le mot de passe</label>
+                                    <input
+                                        type="password"
+                                        placeholder="••••••••"
+                                        className="input"
+                                        value={confirmPassword}
+                                        onChange={(e) => setConfirmPassword(e.target.value)}
+                                    />
                                 </div>
                             </div>
                         </div>

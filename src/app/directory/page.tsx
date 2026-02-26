@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import Avatar from '@/components/ui/Avatar';
-import { Search, MapPin, Briefcase, Linkedin, Mail, LayoutGrid, Users, Award, Shield } from 'lucide-react';
+import { Search, MapPin, Briefcase, Linkedin, Mail, LayoutGrid, Users, Award, Shield, Settings } from 'lucide-react';
+import MemberManageModal from '@/components/features/admin/MemberManageModal';
 import geoData from '@/lib/geoData';
 
 const COPIL_ORDER = [
@@ -25,87 +26,56 @@ export default function DirectoryPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [activeTab, setActiveTab] = useState<TabType>('alumni');
     const [regionFilter, setRegionFilter] = useState('all');
-    const [sortOption, setSortOption] = useState<string>('default'); // 'default', 'name-asc', 'year-desc', 'year-asc'
+    const [sortOption, setSortOption] = useState<string>('default');
+
+    const [currentUser, setCurrentUser] = useState<any>(null);
+    const [selectedMember, setSelectedMember] = useState<any>(null);
+    const [isManageModalOpen, setIsManageModalOpen] = useState(false);
+
     const { regions } = geoData;
 
-    useEffect(() => {
-        const fetchProfiles = async () => {
-            const { data, error } = await supabase
-                .from('profiles')
-                .select('*')
-                .order('last_name');
+    const fetchProfiles = async () => {
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .order('last_name');
 
-            if (error) console.error(error);
-            else setProfiles(data || []);
+        if (error) console.error(error);
+        else setProfiles(data || []);
+    };
+
+    useEffect(() => {
+        const init = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                const { data: currProfile } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', session.user.id)
+                    .single();
+                setCurrentUser(currProfile);
+            }
+
+            await fetchProfiles();
             setLoading(false);
         };
 
-        fetchProfiles();
+        init();
     }, []);
 
-    // Filter by Search & Region (Global)
-    const filteredBySearchAndRegion = profiles.filter(profile => {
-        const fullSearch = (profile.first_name + ' ' + (profile.last_name || '')).toLowerCase();
-        const matchesSearch = fullSearch.includes(searchTerm.toLowerCase());
-        const matchesRegion = regionFilter === 'all' || profile.region === regionFilter;
-        return matchesSearch && matchesRegion;
-    });
+    const canEditMember = (member: any) => {
+        if (!currentUser) return false;
+        // Don't edit yourself here (already in profile page)
+        if (currentUser.id === member.id) return false;
 
-    // Partition by Tab
-    let displayedProfiles = filteredBySearchAndRegion.filter(profile => {
-        if (activeTab === 'copil') {
-            return ['copil', 'copil_plus'].includes(profile.role);
-        } else if (activeTab === 'referent') {
-            return profile.role === 'referent' || profile.is_referent === true;
-        } else {
-            // Alumni includes EVERYONE (Alumni, Referents, Copil)
-            return true;
-        }
-    });
+        // Copil+ and Copil can edit anyone
+        if (['copil_plus', 'copil'].includes(currentUser.role)) return true;
 
-    // Custom Sorting per Tab
-    displayedProfiles.sort((a, b) => {
-        // First priority: User selected sort
-        if (sortOption === 'name-asc') {
-            return (a.last_name || '').localeCompare(b.last_name || '');
-        }
-        if (sortOption === 'year-desc') {
-            return (b.mini_ent_year || 0) - (a.mini_ent_year || 0);
-        }
-        if (sortOption === 'year-asc') {
-            return (a.mini_ent_year || 0) - (b.mini_ent_year || 0);
-        }
+        // Referent can edit people in their region
+        if (currentUser.role === 'referent' && member.region === currentUser.region) return true;
 
-        // Default Sort logic (when sortOption is 'default')
-        if (activeTab === 'copil') {
-            // Sort by Role Order (Présidence first...)
-            const roleA = a.copil_role || '';
-            const roleB = b.copil_role || '';
-            const indexA = COPIL_ORDER.indexOf(roleA);
-            const indexB = COPIL_ORDER.indexOf(roleB);
-
-            // If both are in the priority list
-            if (indexA !== -1 && indexB !== -1) return indexA - indexB;
-            // If only A is in list, A comes first
-            if (indexA !== -1) return -1;
-            // If only B, B comes first
-            if (indexB !== -1) return 1;
-
-            // Otherwise sort by role name then last name
-            if (roleA !== roleB) return roleA.localeCompare(roleB);
-            return (a.last_name || '').localeCompare(b.last_name || '');
-        }
-
-        if (activeTab === 'referent') {
-            // Sort by Region
-            if (a.region !== b.region) return (a.region || '').localeCompare(b.region || '');
-            return (a.last_name || '').localeCompare(b.last_name || '');
-        }
-
-        // Alumni Default: Last Name
-        return (a.last_name || '').localeCompare(b.last_name || '');
-    });
-
+        return false;
+    };
 
     const getRoleBadge = (role: string, copilRole?: string, isReferent?: boolean, copilStartYear?: string) => {
         const referentBadge = <span className="px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 text-xs font-bold">Référent</span>;
@@ -131,6 +101,47 @@ export default function DirectoryPage() {
             default: return <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-xs font-medium">Alumni</span>;
         }
     };
+
+    // Filter by Search & Region (Global)
+    const filteredBySearchAndRegion = profiles.filter(profile => {
+        const fullSearch = (profile.first_name + ' ' + (profile.last_name || '')).toLowerCase();
+        const matchesSearch = fullSearch.includes(searchTerm.toLowerCase());
+        const matchesRegion = regionFilter === 'all' || profile.region === regionFilter;
+        return matchesSearch && matchesRegion;
+    });
+
+    // Partition by Tab
+    let displayedProfiles = filteredBySearchAndRegion.filter(profile => {
+        if (activeTab === 'copil') {
+            return ['copil', 'copil_plus'].includes(profile.role);
+        } else if (activeTab === 'referent') {
+            return profile.role === 'referent' || profile.is_referent === true;
+        } else {
+            return true;
+        }
+    });
+
+    // Custom Sorting
+    displayedProfiles.sort((a, b) => {
+        if (sortOption === 'name-asc') return (a.last_name || '').localeCompare(b.last_name || '');
+        if (sortOption === 'year-desc') return (b.mini_ent_year || 0) - (a.mini_ent_year || 0);
+        if (sortOption === 'year-asc') return (a.mini_ent_year || 0) - (b.mini_ent_year || 0);
+
+        if (activeTab === 'copil') {
+            const indexA = COPIL_ORDER.indexOf(a.copil_role || '');
+            const indexB = COPIL_ORDER.indexOf(b.copil_role || '');
+            if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+            if (indexA !== -1) return -1;
+            if (indexB !== -1) return 1;
+            return (a.copil_role || '').localeCompare(b.copil_role || '');
+        }
+
+        if (activeTab === 'referent') {
+            if (a.region !== b.region) return (a.region || '').localeCompare(b.region || '');
+        }
+
+        return (a.last_name || '').localeCompare(b.last_name || '');
+    });
 
     return (
         <div className="container mx-auto px-4 py-8">
@@ -204,17 +215,6 @@ export default function DirectoryPage() {
                 </div>
             </div>
 
-            {activeTab === 'copil' && (
-                <div className="mb-6 p-4 bg-purple-50 rounded-lg border border-purple-100 text-sm text-purple-700">
-                    Les membres du COPIL sont triés par pôle (Présidence, etc.).
-                </div>
-            )}
-            {activeTab === 'referent' && (
-                <div className="mb-6 p-4 bg-orange-50 rounded-lg border border-orange-100 text-sm text-orange-700">
-                    Les référents sont triés par région.
-                </div>
-            )}
-
             {/* Results */}
             <div className="mb-4 text-sm text-slate-500 text-right">
                 <span className="font-bold text-slate-900">{displayedProfiles.length}</span> membres affichés
@@ -227,7 +227,17 @@ export default function DirectoryPage() {
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     {displayedProfiles.map(profile => (
-                        <div key={profile.id} className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow border border-slate-100 flex flex-col group">
+                        <div key={profile.id} className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow border border-slate-100 flex flex-col group relative">
+                            {/* Management Button */}
+                            {canEditMember(profile) && (
+                                <button
+                                    onClick={() => { setSelectedMember(profile); setIsManageModalOpen(true); }}
+                                    className="absolute top-2 right-2 z-10 p-2 bg-white/80 backdrop-blur shadow-sm rounded-full text-slate-400 hover:text-[var(--color-primary-600)] hover:bg-white transition-all opacity-0 group-hover:opacity-100"
+                                    title="Gérer le membre"
+                                >
+                                    <Settings size={18} />
+                                </button>
+                            )}
 
                             <div className={`h-20 relative bg-gradient-to-r ${activeTab === 'copil' ? 'from-purple-50 to-purple-100' :
                                 activeTab === 'referent' ? 'from-orange-50 to-orange-100' :
@@ -289,6 +299,20 @@ export default function DirectoryPage() {
                 <div className="text-center py-20 bg-slate-50 rounded-xl border-dashed border-2 border-slate-200">
                     <p className="text-slate-500 text-lg">Aucun membre dans cette catégorie.</p>
                 </div>
+            )}
+
+            {/* Modal */}
+            {isManageModalOpen && (
+                <MemberManageModal
+                    isOpen={isManageModalOpen}
+                    onClose={() => setIsManageModalOpen(false)}
+                    member={selectedMember}
+                    currentUser={currentUser}
+                    onSuccess={() => {
+                        fetchProfiles();
+                        setIsManageModalOpen(false);
+                    }}
+                />
             )}
         </div>
     );
