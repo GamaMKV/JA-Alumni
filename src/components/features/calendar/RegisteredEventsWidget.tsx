@@ -71,7 +71,7 @@ export default function RegisteredEventsWidget() {
             <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-bold flex items-center gap-2">
                     <Calendar size={20} className="text-[var(--color-primary-600)]" />
-                    Mes Rappels d'Événements
+                    Mes Rappels d&apos;Événements
                 </h2>
                 <Link href="/calendar" className="text-xs text-[var(--color-primary-600)] hover:underline font-medium">
                     Voir tout
@@ -81,7 +81,7 @@ export default function RegisteredEventsWidget() {
             <div className="space-y-3 overflow-y-auto max-h-[400px] pr-2 custom-scrollbar flex-1">
                 {events.length === 0 ? (
                     <div className="text-center py-10 bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                        <p className="text-sm text-slate-400">Vous n'êtes inscrit à aucun événement futur.</p>
+                        <p className="text-sm text-slate-400">Vous n&apos;êtes inscrit à aucun événement futur.</p>
                         <Link href="/calendar" className="btn-secondary text-xs mt-3 inline-block">
                             Parcourir le calendrier
                         </Link>

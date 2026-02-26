@@ -6,6 +6,7 @@ import { X, Calendar, MapPin, Clock, UserCheck, Users, AlertCircle, Edit, Trash2
 import { supabase } from '@/lib/supabase/client';
 import { format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import Image from 'next/image';
 import EventModal from './EventModal';
 
 type EventDetailsProps = {
@@ -132,7 +133,7 @@ export default function EventDetails({ isOpen, eventId, onClose, currentUserId, 
                                             {/* Cover Image Header */}
                                             <div className="h-48 bg-slate-100 relative group">
                                                 {event.cover_image_url ? (
-                                                    <img src={event.cover_image_url} alt={event.title} className="w-full h-full object-cover" />
+                                                    <Image src={event.cover_image_url} alt={event.title} fill className="object-cover" />
                                                 ) : (
                                                     <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200">
                                                         <Calendar className="text-slate-300 w-16 h-16" />

@@ -260,7 +260,7 @@ export default function EventModal({ isOpen, onClose, onSuccess, userRegion, can
                                             value={formData.description}
                                             onChange={handleChange}
                                             className="input min-h-[100px]"
-                                            placeholder="Détails de l'événement..."
+                                            placeholder="Détails de l&apos;événement..."
                                         />
                                     </div>
 
@@ -292,7 +292,7 @@ export default function EventModal({ isOpen, onClose, onSuccess, userRegion, can
                                                 value={formData.reminder_content}
                                                 onChange={handleChange}
                                                 className="input py-1.5 text-sm min-h-[60px]"
-                                                placeholder="Ex: N'oubliez pas notre rendez-vous demain !"
+                                                placeholder="Ex: N&apos;oubliez pas notre rendez-vous demain !"
                                             />
                                         </div>
                                     </div>
